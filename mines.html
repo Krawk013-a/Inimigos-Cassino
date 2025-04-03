@@ -102,7 +102,10 @@
     </style>
 </head>
 <body>
+    
     <h1>🪙 Mines</h1>
+
+    <script src="common.js"></script>
     
     <div id="controls">
         <input type="number" id="valorAposta" placeholder="Valor (R$)" min="1">
@@ -250,17 +253,15 @@
 
         // Finaliza o jogo e recebe o prêmio
         function pararJogo() {
-            const ganho = valorAposta * multiplicadorAtual;
-            saldo += ganho;
-            updateSaldo();
-            document.getElementById('resultado').textContent = `🎉 Você sacou R$${ganho.toFixed(2)} (${multiplicadorAtual.toFixed(2)}x)!`;
+            const ganhoBruto = valorAposta + (celulasReveladas * 10);
+            finalizarJogoComVitória(ganhoBruto, "Mines");
             document.getElementById('pararBtn').disabled = true;
             
-            // Revela todas as bombas
-            bombPositions.forEach(bombPos => {
-                const bombCell = document.getElementById('mines-grid').children[bombPos];
-                bombCell.className = 'cell bomb';
-                bombCell.textContent = '💣';
+            // Mostra todas as bombas
+            bombPositions.forEach(pos => {
+                const cell = document.getElementById('mines-grid').children[pos];
+                cell.className = 'cell bomb';
+                cell.textContent = '💣';
             });
         }
     </script>

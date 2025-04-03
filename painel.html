@@ -5,116 +5,324 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel - Cassino TCC</title>
     <style>
+        :root {
+            --cor-primaria: #ffcc00;
+            --cor-fundo: #121212;
+            --cor-painel: #1e1e1e;
+            --cor-texto: white;
+            --cor-positivo: #4CAF50;
+            --cor-negativo: #F44336;
+            --cor-taxa: #FF9800;
+        }
+        
         body {
-            font-family: Arial, sans-serif;
-            background-color: #121212;
-            color: white;
-            text-align: center;
+            font-family: 'Arial', sans-serif;
+            background-color: var(--cor-fundo);
+            color: var(--cor-texto);
             margin: 0;
             padding: 20px;
         }
-        .saldo {
-            background: #1e1e1e;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px auto;
-            width: 80%;
-            max-width: 400px;
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
         }
-        .game-option {
-            background-color: #1e1e1e;
-            border: 2px solid #ffcc00;
+        
+        .card {
+            background-color: var(--cor-painel);
             border-radius: 10px;
             padding: 20px;
-            margin: 10px;
-            display: inline-block;
-            width: 200px;
-            cursor: pointer;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
+        
+        h1 {
+            color: var(--cor-primaria);
+            margin-top: 0;
+        }
+        
+        .saldo-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .saldo-valor {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: var(--cor-primaria);
+        }
+        
         button {
-            background: #ffcc00;
+            background-color: var(--cor-primaria);
             color: black;
             border: none;
-            padding: 10px 20px;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        button:hover {
+            transform: scale(1.05);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .game-option {
+            display: flex;
+            align-items: center;
+            background-color: #333;
+            border-left: 5px solid var(--cor-primaria);
+            padding: 15px;
+            margin-bottom: 10px;
             border-radius: 5px;
             cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .game-option:hover {
+            transform: translateX(5px);
+        }
+        
+        .game-option h2 {
+            margin: 0;
+            margin-left: 10px;
+        }
+        
+        #extrato {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        
+        .transacao {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #333;
+        }
+        
+        .transacao:last-child {
+            border-bottom: none;
+        }
+        
+        .transacao-info {
+            flex: 1;
+        }
+        
+        .transacao-descricao {
             font-weight: bold;
-            margin: 10px;
         }
-        /* Estilo do rodapé */
-        footer {
-            background-color: #1a1a1a;
-            color: #999;
-            text-align: center;
-            padding: 15px;
-            margin-top: 30px;
-            font-size: 12px;
-            border-top: 1px solid #333;
+        
+        .transacao-data {
+            font-size: 0.8em;
+            color: #aaa;
         }
-        #commit-version {
-            font-family: monospace;
-            margin-top: 5px;
+        
+        .transacao-valor {
+            text-align: right;
+            margin-left: 20px;
+        }
+        
+        .valor-positivo {
+            color: var(--cor-positivo);
+        }
+        
+        .valor-negativo {
+            color: var(--cor-negativo);
+        }
+        
+        .valor-taxa {
+            color: var(--cor-taxa);
+            font-size: 0.8em;
+        }
+        
+        /* Scrollbar */
+        #extrato::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        #extrato::-webkit-scrollbar-track {
+            background: #333;
+        }
+        
+        #extrato::-webkit-scrollbar-thumb {
+            background: var(--cor-primaria);
+            border-radius: 4px;
         }
     </style>
 </head>
 <body>
-    <h1>Bem-vindo, <span id="username"></span>!</h1>
-    
-    <div class="saldo">
-        <h2>Saldo: R$ <span id="saldo">0</span></h2>
-        <button onclick="resgatarSaldo()">Resgatar R$100 (1x/dia)</button>
+    <div class="container">
+        <div class="card">
+            <h1>Bem-vindo, <span id="username"></span>!</h1>
+            
+            <div class="saldo-container">
+                <div>
+                    <div>Saldo disponível</div>
+                    <div class="saldo-valor" id="saldo-display">R$ 0,00</div>
+                </div>
+                <button onclick="resgatarSaldo()">Resgatar R$100</button>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Jogos Disponíveis</h2>
+            
+            <div class="game-option" onclick="window.location.href='mines.html'">
+                <div style="font-size: 24px;">🪙</div>
+                <h2>Mines</h2>
+            </div>
+            
+            <div class="game-option" onclick="window.location.href='foguete.html'">
+                <div style="font-size: 24px;">🚀</div>
+                <h2>Foguete</h2>
+            </div>
+            
+            <div class="game-option" onclick="window.location.href='roleta.html'">
+                <div style="font-size: 24px;">🎡</div>
+                <h2>Roleta</h2>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Extrato Financeiro</h2>
+            <div id="extrato">
+                <!-- Transações serão inseridas aqui -->
+            </div>
+        </div>
     </div>
-
-    <h2>Escolha um jogo:</h2>
-    <div class="game-option" onclick="window.location.href='mines.html'">
-        <h2>🪙 Mines</h2>
-    </div>
-    <div class="game-option" onclick="window.location.href='foguete.html'">
-        <h2>🚀 Foguete</h2>
-    </div>
-    <div class="game-option" onclick="window.location.href='roleta.html'">
-        <h2>🎡 Roleta</h2>
-    </div>
-
-    <!-- Rodapé com versão do commit -->
-    <footer>
-        <p>Este site é um simulador educacional (TCC). Não utilize valores reais.</p>
-        <p id="commit-version">Carregando versão...</p>
-    </footer>
 
     <script>
-        // Carrega dados ao abrir a página
+        // Taxa sobre ganhos (12.5%)
+        const TAXA_APOSTAS = 0.125;
+        
+        // Carrega dados ao iniciar
         document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('username').textContent = localStorage.getItem('user') || 'Usuário';
-            document.getElementById('saldo').textContent = localStorage.getItem('saldo') || '0';
+            const username = localStorage.getItem('user') || 'Usuário';
+            document.getElementById('username').textContent = username;
             
-            // Busca a versão do GitHub
-            fetch('https://api.github.com/repos/Krawk013-a/Inimigos-Cassino/commits/main')
-                .then(response => response.json())
-                .then(data => {
-                    const commitHash = data.sha.substring(0, 7);
-                    document.getElementById('commit-version').textContent = `Versão: ${commitHash}`;
-                })
-                .catch(() => {
-                    document.getElementById('commit-version').textContent = 'Versão: offline';
-                });
+            updateSaldo();
+            carregarExtrato();
         });
-
-        // Resgata R$100 (1x por dia)
+        
+        // Atualiza o saldo na tela
+        function updateSaldo() {
+            const saldo = Number(localStorage.getItem('saldo')) || 0;
+            document.getElementById('saldo-display').textContent = saldo.toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            });
+        }
+        
+        // Carrega o extrato
+        function carregarExtrato() {
+            const extrato = JSON.parse(localStorage.getItem('extrato')) || [];
+            const extratoContainer = document.getElementById('extrato');
+            extratoContainer.innerHTML = '';
+            
+            if (extrato.length === 0) {
+                extratoContainer.innerHTML = '<p>Nenhuma transação registrada</p>';
+                return;
+            }
+            
+            // Ordena do mais recente para o mais antigo
+            extrato.sort((a, b) => new Date(b.data) - new Date(a.data));
+            
+            extrato.forEach(transacao => {
+                const divTransacao = document.createElement('div');
+                divTransacao.className = 'transacao';
+                
+                const valor = transacao.valor;
+                const isTaxa = transacao.descricao.includes('Taxa');
+                
+                divTransacao.innerHTML = `
+                    <div class="transacao-info">
+                        <div class="transacao-descricao">${transacao.descricao}</div>
+                        <div class="transacao-data">${new Date(transacao.data).toLocaleString()}</div>
+                    </div>
+                    <div class="transacao-valor">
+                        <div class="${valor >= 0 ? 'valor-positivo' : 'valor-negativo'}">
+                            ${valor >= 0 ? '+' : ''}${valor.toLocaleString('pt-BR', {
+                                style: 'currency',
+                                currency: 'BRL'
+                            })}
+                        </div>
+                        ${transacao.taxa ? `
+                        <div class="valor-taxa">
+                            Taxa: -${transacao.taxa.toLocaleString('pt-BR', {
+                                style: 'currency',
+                                currency: 'BRL'
+                            })}
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+                
+                extratoContainer.appendChild(divTransacao);
+            });
+        }
+        
+        // Resgata saldo diário
         function resgatarSaldo() {
             const hoje = new Date().toLocaleDateString();
             const ultimoResgate = localStorage.getItem('ultimoResgate');
-            let saldo = Number(localStorage.getItem('saldo')) || 0;
             
             if (ultimoResgate !== hoje) {
-                saldo += 100;
-                localStorage.setItem('saldo', saldo);
+                registrarTransacao('Resgate diário', 100);
                 localStorage.setItem('ultimoResgate', hoje);
-                document.getElementById('saldo').textContent = saldo;
                 alert('R$100 resgatados! Volte amanhã para mais.');
             } else {
                 alert('Você já resgatou hoje. Volte amanhã!');
             }
+        }
+        
+        // Registra uma transação
+        function registrarTransacao(descricao, valorBruto, isGanho = false) {
+            let valorLiquido = valorBruto;
+            let taxa = 0;
+            
+            // Aplica taxa sobre ganhos
+            if (isGanho && valorBruto > 0) {
+                taxa = valorBruto * TAXA_APOSTAS;
+                valorLiquido = valorBruto - taxa;
+                
+                // Registra a taxa como transação separada
+                registrarTransacao(`Taxa sobre ${descricao.toLowerCase()}`, -taxa);
+            }
+            
+            // Atualiza saldo
+            const saldoAtual = Number(localStorage.getItem('saldo')) || 0;
+            const novoSaldo = saldoAtual + valorLiquido;
+            localStorage.setItem('saldo', novoSaldo);
+            
+            // Adiciona ao extrato
+            const extrato = JSON.parse(localStorage.getItem('extrato')) || [];
+            extrato.push({
+                data: new Date().toISOString(),
+                descricao: descricao,
+                valor: valorLiquido,
+                taxa: isGanho ? taxa : null,
+                saldo: novoSaldo
+            });
+            
+            localStorage.setItem('extrato', JSON.stringify(extrato));
+            
+            // Atualiza a tela
+            updateSaldo();
+            carregarExtrato();
+            
+            return {
+                liquido: valorLiquido,
+                taxa: taxa
+            };
         }
     </script>
 </body>
