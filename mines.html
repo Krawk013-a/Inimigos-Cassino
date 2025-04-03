@@ -253,7 +253,7 @@
 
         // Finaliza o jogo e recebe o prêmio
         function pararJogo() {
-            const ganhoBruto = valorAposta + (celulasReveladas * 10);
+            const ganhoBruto = valorAposta * multiplicadorAtual;
             finalizarJogoComVitória(ganhoBruto, "Mines");
             document.getElementById('pararBtn').disabled = true;
             
