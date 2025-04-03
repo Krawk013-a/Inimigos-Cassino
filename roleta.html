@@ -2,13 +2,16 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Roleta - TCC</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roleta - Cassino TCC</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             background-color: #121212;
             color: white;
             text-align: center;
+            margin: 0;
+            padding: 20px;
         }
         #roleta {
             width: 300px;
@@ -16,49 +19,102 @@
             margin: 20px auto;
             border-radius: 50%;
             background: conic-gradient(
-                red 0deg 15deg,
-                black 15deg 45deg,
-                red 45deg 60deg,
-                black 60deg 90deg,
-                red 90deg 120deg,
-                black 120deg 150deg,
-                red 150deg 180deg,
-                black 180deg 210deg,
-                red 210deg 240deg,
-                black 240deg 270deg,
-                red 270deg 300deg,
-                black 300deg 330deg,
+                red 0deg 15deg, black 15deg 45deg,
+                red 45deg 60deg, black 60deg 90deg,
+                red 90deg 120deg, black 120deg 150deg,
+                red 150deg 180deg, black 180deg 210deg,
+                red 210deg 240deg, black 240deg 270deg,
+                red 270deg 300deg, black 300deg 330deg,
                 red 330deg 360deg
             );
             position: relative;
         }
         #seta {
             position: absolute;
-            top: -20px;
+            top: -30px;
             left: 50%;
             transform: translateX(-50%);
-            font-size: 30px;
+            font-size: 40px;
+            z-index: 10;
         }
         button {
             background: #ffcc00;
+            color: black;
             border: none;
             padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
             border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+        }
+        input {
+            padding: 10px;
+            margin: 10px;
+            width: 100px;
+            border-radius: 5px;
+            border: none;
+        }
+        .aposta-option {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .vermelho {
+            background: red;
+        }
+        .preto {
+            background: black;
+            color: white;
+        }
+        .selecionado {
+            border: 3px solid #ffcc00;
         }
     </style>
 </head>
 <body>
-    <h1>Roleta</h1>
+    <h1>🎡 Roleta</h1>
+    <div>
+        <input type="number" id="valorAposta" placeholder="Valor (R$)" min="1">
+        <p>Escolha uma cor:</p>
+        <div class="aposta-option vermelho" onclick="selecionarCor('vermelho')">Vermelho</div>
+        <div class="aposta-option preto" onclick="selecionarCor('preto')">Preto</div>
+    </div>
+    <button onclick="girarRoleta()">Girar!</button>
+    
     <div id="roleta">
         <div id="seta">▼</div>
     </div>
-    <button onclick="girarRoleta()">Girar!</button>
     <p id="resultado"></p>
 
     <script>
+        let saldo = Number(localStorage.getItem('saldo')) || 0;
+        let corAposta = null;
+
+        function selecionarCor(cor) {
+            corAposta = cor;
+            document.querySelectorAll('.aposta-option').forEach(el => {
+                el.classList.remove('selecionado');
+            });
+            document.querySelector(`.${cor}`).classList.add('selecionado');
+        }
+
         function girarRoleta() {
+            const valorAposta = Number(document.getElementById('valorAposta').value);
+            if (valorAposta < 1 || valorAposta > saldo) {
+                alert('Aposta inválida ou saldo insuficiente!');
+                return;
+            }
+            if (!corAposta) {
+                alert('Escolha uma cor!');
+                return;
+            }
+
+            // Deduz a aposta do saldo
+            saldo -= valorAposta;
+            localStorage.setItem('saldo', saldo);
+            
             const roleta = document.getElementById('roleta');
             const resultado = document.getElementById('resultado');
             const giro = Math.floor(Math.random() * 3600) + 720; // Gira entre 2 e 10 voltas
@@ -68,6 +124,7 @@
             roleta.style.transform = `rotate(${giro}deg)`;
 
             setTimeout(() => {
+                let corSorteada;
                 if ((anguloFinal >= 0 && anguloFinal < 15) || 
                     (anguloFinal >= 45 && anguloFinal < 60) || 
                     (anguloFinal >= 90 && anguloFinal < 120) || 
@@ -75,9 +132,18 @@
                     (anguloFinal >= 210 && anguloFinal < 240) || 
                     (anguloFinal >= 270 && anguloFinal < 300) || 
                     (anguloFinal >= 330 && anguloFinal < 360)) {
-                    resultado.textContent = "Vermelho!";
+                    corSorteada = 'vermelho';
                 } else {
-                    resultado.textContent = "Preto!";
+                    corSorteada = 'preto';
+                }
+
+                if (corAposta === corSorteada) {
+                    const ganho = valorAposta * 2;
+                    saldo += ganho;
+                    localStorage.setItem('saldo', saldo);
+                    resultado.textContent = `🎉 ${corSorteada.toUpperCase()}! Você ganhou R$${ganho}!`;
+                } else {
+                    resultado.textContent = `💸 ${corSorteada.toUpperCase()}! Você perdeu R$${valorAposta}.`;
                 }
             }, 3000);
         }
