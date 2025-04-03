@@ -2,7 +2,7 @@
 const supabaseUrl = "https://jdoxsqgkwnlljycibjhd.supabase.co"
 const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impkb3hzcWdrd25sbGp5Y2liamhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM3MTQ2NDUsImV4cCI6MjA1OTI5MDY0NX0.qED8PJmpMPgMPXpaNGj8rbPLEj_S3wF63p4VQw_QpoE"
 
-const supabase = supabase.createClient(supabaseUrl, supabaseAnonKey)
+const supabaseClient  = supabase.createClient(supabaseUrl, supabaseKey);
 
 // Funções de autenticação
 async function signUp(email, password, username) {
