@@ -11,7 +11,6 @@
             --cor-painel: #1e1e1e;
             --cor-texto: white;
             --cor-explosao: #ff3a3a;
-            --cor-ganho: #4CAF50;
         }
         
         body {
@@ -21,6 +20,7 @@
             text-align: center;
             margin: 0;
             padding: 20px;
+            min-height: 100vh;
         }
         
         h1 {
@@ -58,8 +58,8 @@
             color: black;
             font-weight: bold;
             cursor: pointer;
-            min-width: 100px;
             transition: all 0.2s;
+            min-width: 100px;
         }
         
         button:hover {
@@ -147,6 +147,22 @@
             margin: 10px 0;
         }
         
+        footer {
+            background-color: #1a1a1a;
+            color: #999;
+            text-align: center;
+            padding: 15px;
+            margin-top: 30px;
+            font-size: 12px;
+            border-top: 1px solid #333;
+        }
+        
+        #commit-version {
+            font-family: monospace;
+            margin-top: 5px;
+        }
+        
+        /* Efeitos de fumaça */
         .fumaca {
             position: absolute;
             width: 10px;
@@ -180,7 +196,11 @@
     
     <p id="resultado"></p>
 
-    <script src="common.js"></script>
+    <footer>
+        <p>Este site é um simulador educacional (TCC). Não utilize valores reais.</p>
+        <p id="commit-version">Versão: carregando...</p>
+    </footer>
+
     <script>
         // Variáveis do jogo
         let saldo = Number(localStorage.getItem('saldo')) || 0;
@@ -197,7 +217,24 @@
         document.addEventListener('DOMContentLoaded', function() {
             gameContainer = document.getElementById('game-container');
             updateSaldo();
+            
+            // Busca a versão do GitHub
+            fetch('https://api.github.com/repos/Krawk013-a/Inimigos-Cassino/commits/main')
+                .then(response => response.json())
+                .then(data => {
+                    const commitHash = data.sha.substring(0, 7);
+                    document.getElementById('commit-version').textContent = `Versão: ${commitHash}`;
+                })
+                .catch(() => {
+                    document.getElementById('commit-version').textContent = 'Versão: offline';
+                });
         });
+
+        // Atualiza o saldo na tela
+        function updateSaldo() {
+            document.getElementById('saldo-value').textContent = saldo.toFixed(2);
+            localStorage.setItem('saldo', saldo);
+        }
 
         // Atualiza as informações do jogo
         function updateGameInfo() {
@@ -273,10 +310,10 @@
             document.getElementById('resultado').textContent = '';
             document.getElementById('pararBtn').disabled = false;
             document.getElementById('foguete').style.transform = 'translateX(-50%) translateY(0)';
-            document.getElementById('foguete').textContent = '🚀';
             
             // Deduz a aposta
-            registrarTransacao("Aposta no Foguete", -valorAposta);
+            saldo -= valorAposta;
+            updateSaldo();
             document.getElementById('aposta-value').textContent = valorAposta.toFixed(2);
             
             // Configurações iniciais
@@ -292,7 +329,7 @@
             // Inicia o movimento do foguete
             fogueteInterval = setInterval(() => {
                 // Aumenta a velocidade e o multiplicador
-                velocidade *= 1.003;
+                velocidade *= 1.005;
                 multiplicadorAtual += 0.01 * velocidade;
                 
                 // Move o foguete
@@ -321,8 +358,11 @@
             clearInterval(fogueteInterval);
             clearInterval(fumacaInterval);
             
-            const ganhoBruto = valorAposta * multiplicadorAtual;
-            finalizarJogoComVitória(ganhoBruto, "Foguete");
+            const ganho = valorAposta * multiplicadorAtual;
+            saldo += ganho;
+            updateSaldo();
+            
+            document.getElementById('resultado').textContent = `🎉 Você sacou R$${ganho.toFixed(2)} (${multiplicadorAtual.toFixed(2)}x)!`;
             document.getElementById('pararBtn').disabled = true;
         }
     </script>
