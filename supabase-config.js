@@ -4,10 +4,13 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = "https://jdoxsqgkwnlljycibjhd.supabase.co";
 const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impkb3hzcWdrd25sbGp5Y2liamhkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MzcxNDY0NSwiZXhwIjoyMDU5MjkwNjQ1fQ.oX7rnMXF3L_m7m9wyHY1re5Y5VLpw4GdV-m63JuiycE";
 
-const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+function getSupabaseClient() {
+  return createClient(supabaseUrl, supabaseAnonKey);
+}
 
 // Funções de autenticação
 async function signUp(email, password, username) {
+  const supabaseClient = getSupabaseClient();
   const { data, error } = await supabaseClient.auth.signUp({
     email,
     password,
@@ -38,6 +41,7 @@ async function signUp(email, password, username) {
 }
 
 async function signIn(email, password) {
+    const supabaseClient = getSupabaseClient();
     const { data, error } = await supabaseClient.auth.signInWithEmailAndPassword(
       email,
       password
@@ -55,12 +59,14 @@ async function signIn(email, password) {
   }
 
 async function signOut() {
+  const supabaseClient = getSupabaseClient();
   const { error } = await supabaseClient.auth.signOut();
   if (error) throw error;
 }
 
 // Verifica se usuário está logado
 async function getCurrentUser() {
+  const supabaseClient = getSupabaseClient();
   const { data: { user }, error } = await supabaseClient.auth.getUser();
   if (error) throw error;
   return user;
