@@ -24,18 +24,22 @@
             height: 300px;
             border-radius: 50%;
             background: conic-gradient(
-                red 0deg 15deg, black 15deg 45deg,
-                red 45deg 60deg, black 60deg 90deg,
-                red 90deg 120deg, black 120deg 150deg,
-                red 150deg 180deg, black 180deg 210deg,
-                red 210deg 240deg, black 240deg 270deg,
-                red 270deg 300deg, black 300deg 330deg,
-                red 330deg 360deg
+                /* 18 setores (9 vermelhos, 9 pretos) de 20° cada */
+                red 0deg 20deg, black 20deg 40deg,
+                red 40deg 60deg, black 60deg 80deg,
+                red 80deg 100deg, black 100deg 120deg,
+                red 120deg 140deg, black 140deg 160deg,
+                red 160deg 180deg, black 180deg 200deg,
+                red 200deg 220deg, black 220deg 240deg,
+                red 240deg 260deg, black 260deg 280deg,
+                red 280deg 300deg, black 300deg 320deg,
+                red 320deg 340deg, black 340deg 360deg
             );
             position: absolute;
             top: 0;
             left: 50%;
             transform: translateX(-50%);
+            transition: transform 3s cubic-bezier(0.1, 0.7, 0.1, 1); /* Efeito de desaceleração realista */
         }
         #seta {
             position: absolute;
@@ -44,6 +48,7 @@
             transform: translateX(-50%);
             font-size: 40px;
             z-index: 10;
+            color: #ffcc00;
         }
         .base {
             width: 320px;
@@ -92,7 +97,7 @@
     </style>
 </head>
 <body>
-    <h1>🎡 Roleta</h1>
+    <h1>🎡 Roleta Simétrica</h1>
     <div>
         <input type="number" id="valorAposta" placeholder="Valor (R$)" min="1" value="10">
         <p>Escolha uma cor:</p>
@@ -106,11 +111,11 @@
         <div id="roleta"></div>
         <div class="base"></div>
     </div>
-    <p id="resultado">- PRETO! Você perdeu R$10.</p>
+    <p id="resultado"></p>
 
     <script>
         let saldo = Number(localStorage.getItem('saldo')) || 0;
-        let corAposta = 'vermelho'; // Padrão: vermelho selecionado
+        let corAposta = 'vermelho';
 
         function selecionarCor(cor) {
             corAposta = cor;
@@ -133,25 +138,17 @@
             
             const roleta = document.getElementById('roleta');
             const resultado = document.getElementById('resultado');
-            const giro = Math.floor(Math.random() * 3600) + 720; // Gira entre 2 e 10 voltas
-            const anguloFinal = giro % 360;
+            
+            // Gira entre 2 e 10 voltas (720° a 3600°), sempre parando em um ângulo múltiplo de 20° (setor simétrico)
+            const voltas = Math.floor(Math.random() * 9) + 2; // 2 a 10 voltas
+            const anguloFinal = (Math.floor(Math.random() * 18)) * 20; // 0°, 20°, 40°, ..., 340°
+            const giroTotal = (voltas * 360) + anguloFinal; // Giro completo + ângulo final
 
-            roleta.style.transition = 'transform 3s ease-out';
-            roleta.style.transform = `translateX(-50%) rotate(${giro}deg)`;
+            roleta.style.transform = `translateX(-50%) rotate(${giroTotal}deg)`;
 
             setTimeout(() => {
-                let corSorteada;
-                if ((anguloFinal >= 0 && anguloFinal < 15) || 
-                    (anguloFinal >= 45 && anguloFinal < 60) || 
-                    (anguloFinal >= 90 && anguloFinal < 120) || 
-                    (anguloFinal >= 150 && anguloFinal < 180) || 
-                    (anguloFinal >= 210 && anguloFinal < 240) || 
-                    (anguloFinal >= 270 && anguloFinal < 300) || 
-                    (anguloFinal >= 330 && anguloFinal < 360)) {
-                    corSorteada = 'vermelho';
-                } else {
-                    corSorteada = 'preto';
-                }
+                // Determina a cor sorteada (ângulo final múltiplo de 20°)
+                const corSorteada = (anguloFinal % 40 === 0) ? 'vermelho' : 'preto';
 
                 if (corAposta === corSorteada) {
                     const ganho = valorAposta * 2;
