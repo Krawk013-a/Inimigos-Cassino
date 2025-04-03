@@ -39,6 +39,9 @@
             background: red;
             color: white;
         }
+        #controls {
+            margin: 20px auto;
+        }
         input, button {
             padding: 10px;
             margin: 10px;
@@ -50,9 +53,6 @@
             color: black;
             font-weight: bold;
             cursor: pointer;
-        }
-        #controls {
-            margin: 20px auto;
         }
     </style>
 </head>
@@ -75,6 +75,11 @@
         let valorAposta = 0;
         let celulasReveladas = 0;
 
+        function updateSaldo() {
+            document.getElementById('saldo').textContent = saldo;
+            localStorage.setItem('saldo', saldo);
+        }
+
         function iniciarJogo() {
             valorAposta = Number(document.getElementById('valorAposta').value);
             const numBombas = parseInt(document.getElementById('numBombas').value);
@@ -83,23 +88,16 @@
                 alert('Aposta inválida ou saldo insuficiente!');
                 return;
             }
-            if (numBombas < 1 || numBombas > 5) {
-                alert('Escolha entre 1 e 5 bombas!');
-                return;
-            }
 
-            // Deduz a aposta do saldo
             saldo -= valorAposta;
-            localStorage.setItem('saldo', saldo);
+            updateSaldo();
             
-            // Gera bombas aleatórias
             bombPositions = [];
             while (bombPositions.length < numBombas) {
                 const pos = Math.floor(Math.random() * 25);
                 if (!bombPositions.includes(pos)) bombPositions.push(pos);
             }
 
-            // Cria a grade
             const grid = document.getElementById('mines-grid');
             grid.innerHTML = '';
             celulasReveladas = 0;
@@ -131,14 +129,14 @@
         }
 
         function atualizarGanho() {
-            const ganho = valorAposta + (celulasReveladas * 10); // Exemplo: R$10 por célula
+            const ganho = valorAposta + (celulasReveladas * 10);
             document.getElementById('ganho').textContent = `Ganho potencial: R$${ganho}`;
         }
 
         function pararJogo() {
             const ganho = valorAposta + (celulasReveladas * 10);
             saldo += ganho;
-            localStorage.setItem('saldo', saldo);
+            updateSaldo();
             document.getElementById('resultado').textContent = `🎉 Você sacou R$${ganho}!`;
             document.getElementById('pararBtn').disabled = true;
         }

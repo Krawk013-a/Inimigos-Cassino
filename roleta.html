@@ -24,7 +24,6 @@
             height: 300px;
             border-radius: 50%;
             background: conic-gradient(
-                /* 18 setores (9 vermelhos, 9 pretos) de 20° cada */
                 red 0deg 20deg, black 20deg 40deg,
                 red 40deg 60deg, black 60deg 80deg,
                 red 80deg 100deg, black 100deg 120deg,
@@ -39,7 +38,7 @@
             top: 0;
             left: 50%;
             transform: translateX(-50%);
-            transition: transform 3s cubic-bezier(0.1, 0.7, 0.1, 1); /* Efeito de desaceleração realista */
+            transition: transform 3s cubic-bezier(0.1, 0.7, 0.1, 1);
         }
         #seta {
             position: absolute;
@@ -60,22 +59,20 @@
             left: 50%;
             transform: translateX(-50%);
         }
+        #controls {
+            margin: 20px auto;
+        }
+        input, button {
+            padding: 10px;
+            margin: 10px;
+            border-radius: 5px;
+            border: none;
+        }
         button {
             background: #ffcc00;
             color: black;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
             font-weight: bold;
-            margin: 10px;
-        }
-        input {
-            padding: 10px;
-            margin: 10px;
-            width: 100px;
-            border-radius: 5px;
-            border: none;
+            cursor: pointer;
         }
         .aposta-option {
             display: inline-block;
@@ -97,8 +94,8 @@
     </style>
 </head>
 <body>
-    <h1>🎡 Roleta Simétrica</h1>
-    <div>
+    <h1>🎡 Roleta</h1>
+    <div id="controls">
         <input type="number" id="valorAposta" placeholder="Valor (R$)" min="1" value="10">
         <p>Escolha uma cor:</p>
         <div class="aposta-option vermelho selecionado" onclick="selecionarCor('vermelho')">Vermelho</div>
@@ -117,6 +114,10 @@
         let saldo = Number(localStorage.getItem('saldo')) || 0;
         let corAposta = 'vermelho';
 
+        function updateSaldo() {
+            localStorage.setItem('saldo', saldo);
+        }
+
         function selecionarCor(cor) {
             corAposta = cor;
             document.querySelectorAll('.aposta-option').forEach(el => {
@@ -132,28 +133,23 @@
                 return;
             }
 
-            // Deduz a aposta do saldo
             saldo -= valorAposta;
-            localStorage.setItem('saldo', saldo);
+            updateSaldo();
             
             const roleta = document.getElementById('roleta');
             const resultado = document.getElementById('resultado');
-            
-            // Gira entre 2 e 10 voltas (720° a 3600°), sempre parando em um ângulo múltiplo de 20° (setor simétrico)
-            const voltas = Math.floor(Math.random() * 9) + 2; // 2 a 10 voltas
-            const anguloFinal = (Math.floor(Math.random() * 18)) * 20; // 0°, 20°, 40°, ..., 340°
-            const giroTotal = (voltas * 360) + anguloFinal; // Giro completo + ângulo final
+            const voltas = Math.floor(Math.random() * 9) + 2;
+            const anguloFinal = (Math.floor(Math.random() * 18)) * 20;
+            const giroTotal = (voltas * 360) + anguloFinal;
 
             roleta.style.transform = `translateX(-50%) rotate(${giroTotal}deg)`;
 
             setTimeout(() => {
-                // Determina a cor sorteada (ângulo final múltiplo de 20°)
                 const corSorteada = (anguloFinal % 40 === 0) ? 'vermelho' : 'preto';
-
                 if (corAposta === corSorteada) {
                     const ganho = valorAposta * 2;
                     saldo += ganho;
-                    localStorage.setItem('saldo', saldo);
+                    updateSaldo();
                     resultado.textContent = `🎉 ${corSorteada.toUpperCase()}! Você ganhou R$${ganho}!`;
                 } else {
                     resultado.textContent = `💸 ${corSorteada.toUpperCase()}! Você perdeu R$${valorAposta}.`;

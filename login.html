@@ -56,9 +56,10 @@
             const password = document.getElementById('password').value;
             
             if (username && password) {
-                // Salva no localStorage (simulação)
                 localStorage.setItem('user', username);
-                localStorage.setItem('saldo', 0); // Inicia com 0
+                if (!localStorage.getItem('saldo')) {
+                    localStorage.setItem('saldo', '100'); // Saldo inicial R$100
+                }
                 window.location.href = 'painel.html';
             } else {
                 document.getElementById('error').textContent = 'Preencha todos os campos!';

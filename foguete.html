@@ -33,25 +33,20 @@
             font-size: 24px;
             margin: 20px;
         }
+        #controls {
+            margin: 20px auto;
+        }
+        input, button {
+            padding: 10px;
+            margin: 10px;
+            border-radius: 5px;
+            border: none;
+        }
         button {
             background: #ffcc00;
             color: black;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
             font-weight: bold;
-            margin: 5px;
-        }
-        input {
-            padding: 10px;
-            margin: 10px;
-            width: 100px;
-            border-radius: 5px;
-            border: none;
-        }
-        #controls {
-            margin: 20px auto;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -75,6 +70,10 @@
         let saldo = Number(localStorage.getItem('saldo')) || 0;
         let aposta = 0;
 
+        function updateSaldo() {
+            localStorage.setItem('saldo', saldo);
+        }
+
         function iniciarJogo() {
             aposta = Number(document.getElementById('aposta').value);
             if (aposta < 1 || aposta > saldo) {
@@ -82,16 +81,14 @@
                 return;
             }
 
-            // Deduz a aposta do saldo
             saldo -= aposta;
-            localStorage.setItem('saldo', saldo);
+            updateSaldo();
             
             multiplicador = 1;
             document.getElementById('resultado').textContent = '';
             document.getElementById('foguete').style.transform = 'translateX(-50%) scale(1)';
             document.getElementById('pararBtn').disabled = false;
             
-            // Movimenta o foguete
             fogueteInterval = setInterval(() => {
                 multiplicador += 0.05;
                 document.getElementById('multiplicador').textContent = `Multiplicador: ${multiplicador.toFixed(2)}x`;
@@ -99,7 +96,6 @@
                 const altura = Math.min(multiplicador * 20, 250);
                 document.getElementById('foguete').style.transform = `translateX(-50%) translateY(-${altura}px) scale(${1 + multiplicador * 0.1})`;
                 
-                // Explode aleatoriamente
                 if (Math.random() < 0.01 * multiplicador) {
                     clearInterval(fogueteInterval);
                     document.getElementById('resultado').textContent = `💥 Foguete explodiu! Você perdeu R$${aposta}.`;
@@ -112,7 +108,7 @@
             clearInterval(fogueteInterval);
             const ganho = aposta * multiplicador;
             saldo += ganho;
-            localStorage.setItem('saldo', saldo);
+            updateSaldo();
             document.getElementById('resultado').textContent = `🎉 Você ganhou R$${ganho.toFixed(2)}!`;
             document.getElementById('pararBtn').disabled = true;
         }

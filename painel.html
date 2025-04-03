@@ -63,25 +63,21 @@
     </div>
 
     <script>
-        // Mostra o nome do usuário
-        document.getElementById('username').textContent = localStorage.getItem('user') || 'Usuário';
-        
-        // Atualiza o saldo
-        function updateSaldo() {
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('username').textContent = localStorage.getItem('user') || 'Usuário';
             document.getElementById('saldo').textContent = localStorage.getItem('saldo') || '0';
-        }
-        updateSaldo();
+        });
 
-        // Resgata R$100 (1x por dia)
         function resgatarSaldo() {
             const hoje = new Date().toLocaleDateString();
             const ultimoResgate = localStorage.getItem('ultimoResgate');
+            let saldo = Number(localStorage.getItem('saldo')) || 0;
             
             if (ultimoResgate !== hoje) {
-                const novoSaldo = Number(localStorage.getItem('saldo')) + 100;
-                localStorage.setItem('saldo', novoSaldo);
+                saldo += 100;
+                localStorage.setItem('saldo', saldo);
                 localStorage.setItem('ultimoResgate', hoje);
-                updateSaldo();
+                document.getElementById('saldo').textContent = saldo;
                 alert('R$100 resgatados! Volte amanhã para mais.');
             } else {
                 alert('Você já resgatou hoje. Volte amanhã!');
