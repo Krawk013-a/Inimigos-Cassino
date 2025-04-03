@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel - Cassino TCC</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase-config.js"></script>
-    <script src="transactions.js"></script>
     <style>
         :root {
             --cor-primaria: #ffcc00;
@@ -39,7 +36,7 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
         
-        h1, h2 {
+        h1 {
             color: var(--cor-primaria);
             margin-top: 0;
         }
@@ -69,8 +66,7 @@
         }
         
         button:hover {
-            opacity: 0.9;
-            transform: scale(1.02);
+            transform: scale(1.05);
         }
         
         button:disabled {
@@ -135,15 +131,15 @@
             margin-left: 20px;
         }
         
-        .positivo {
+        .valor-positivo {
             color: var(--cor-positivo);
         }
         
-        .negativo {
+        .valor-negativo {
             color: var(--cor-negativo);
         }
         
-        .taxa {
+        .valor-taxa {
             color: var(--cor-taxa);
             font-size: 0.8em;
         }
@@ -205,108 +201,128 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', async () => {
-            try {
-                // Verifica se usuário está logado
-                const { data: { user }, error: authError } = await supabase.auth.getUser()
-                
-                if (authError || !user) {
-                    window.location.href = 'login.html'
-                    return
-                }
-                
-                // Carrega dados do usuário
-                const { data: userData, error: userError } = await supabase
-                    .from('users')
-                    .select('username, saldo')
-                    .eq('id', user.id)
-                    .single()
-                
-                if (userError) throw userError
-                
-                // Carrega transações
-                const { data: transactions, error: transError } = await supabase
-                    .from('transactions')
-                    .select('*')
-                    .eq('user_id', user.id)
-                    .order('created_at', { ascending: false })
-                    .limit(50)
-                
-                if (transError) throw transError
-                
-                // Atualiza a UI
-                document.getElementById('username').textContent = userData.username
-                document.getElementById('saldo-display').textContent = 
-                    userData.saldo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-                
-                const extratoContainer = document.getElementById('extrato')
-                if (transactions.length === 0) {
-                    extratoContainer.innerHTML = '<p>Nenhuma transação registrada</p>'
-                } else {
-                    transactions.forEach(transacao => {
-                        const div = document.createElement('div')
-                        div.className = 'transacao'
-                        
-                        const valor = transacao.value
-                        const isTaxa = transacao.description.includes('Taxa')
-                        
-                        div.innerHTML = `
-                            <div class="transacao-info">
-                                <div class="transacao-descricao">${transacao.description}</div>
-                                <div class="transacao-data">${new Date(transacao.created_at).toLocaleString()}</div>
-                            </div>
-                            <div class="transacao-valor">
-                                <div class="${valor >= 0 ? 'positivo' : 'negativo'}">
-                                    ${valor >= 0 ? '+' : ''}${valor.toLocaleString('pt-BR', {
-                                        style: 'currency',
-                                        currency: 'BRL'
-                                    })}
-                                </div>
-                                ${transacao.tax ? `
-                                <div class="taxa">
-                                    Taxa: -${transacao.tax.toLocaleString('pt-BR', {
-                                        style: 'currency',
-                                        currency: 'BRL'
-                                    })}
-                                </div>
-                                ` : ''}
-                            </div>
-                        `
-                        extratoContainer.appendChild(div)
-                    })
-                }
-                
-            } catch (error) {
-                console.error('Erro ao carregar dados:', error)
-                alert('Erro ao carregar dados do usuário')
-                await signOut()
-                window.location.href = 'login.html'
+        // Taxa sobre ganhos (12.5%)
+        const TAXA_APOSTAS = 0.125;
+        
+        // Carrega dados ao iniciar
+        document.addEventListener('DOMContentLoaded', function() {
+            const username = localStorage.getItem('user') || 'Usuário';
+            document.getElementById('username').textContent = username;
+            
+            updateSaldo();
+            carregarExtrato();
+        });
+        
+        // Atualiza o saldo na tela
+        function updateSaldo() {
+            const saldo = Number(localStorage.getItem('saldo')) || 0;
+            document.getElementById('saldo-display').textContent = saldo.toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            });
+        }
+        
+        // Carrega o extrato
+        function carregarExtrato() {
+            const extrato = JSON.parse(localStorage.getItem('extrato')) || [];
+            const extratoContainer = document.getElementById('extrato');
+            extratoContainer.innerHTML = '';
+            
+            if (extrato.length === 0) {
+                extratoContainer.innerHTML = '<p>Nenhuma transação registrada</p>';
+                return;
             }
-        })
-
-        async function resgatarSaldo() {
-            try {
-                const { data: { user } } = await supabase.auth.getUser()
-                if (!user) {
-                    window.location.href = 'login.html'
-                    return
-                }
+            
+            // Ordena do mais recente para o mais antigo
+            extrato.sort((a, b) => new Date(b.data) - new Date(a.data));
+            
+            extrato.forEach(transacao => {
+                const divTransacao = document.createElement('div');
+                divTransacao.className = 'transacao';
                 
-                const hoje = new Date().toLocaleDateString()
-                const ultimoResgate = localStorage.getItem('ultimoResgate')
+                const valor = transacao.valor;
+                const isTaxa = transacao.descricao.includes('Taxa');
                 
-                if (ultimoResgate !== hoje) {
-                    await registerTransaction('Resgate diário', 100)
-                    localStorage.setItem('ultimoResgate', hoje)
-                    alert('R$100 resgatados! Volte amanhã para mais.')
-                    location.reload()
-                } else {
-                    alert('Você já resgatou hoje. Volte amanhã!')
-                }
-            } catch (error) {
-                console.error('Erro ao resgatar saldo:', error)
-                alert('Erro ao processar resgate')
+                divTransacao.innerHTML = `
+                    <div class="transacao-info">
+                        <div class="transacao-descricao">${transacao.descricao}</div>
+                        <div class="transacao-data">${new Date(transacao.data).toLocaleString()}</div>
+                    </div>
+                    <div class="transacao-valor">
+                        <div class="${valor >= 0 ? 'valor-positivo' : 'valor-negativo'}">
+                            ${valor >= 0 ? '+' : ''}${valor.toLocaleString('pt-BR', {
+                                style: 'currency',
+                                currency: 'BRL'
+                            })}
+                        </div>
+                        ${transacao.taxa ? `
+                        <div class="valor-taxa">
+                            Taxa: -${transacao.taxa.toLocaleString('pt-BR', {
+                                style: 'currency',
+                                currency: 'BRL'
+                            })}
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+                
+                extratoContainer.appendChild(divTransacao);
+            });
+        }
+        
+        // Resgata saldo diário
+        function resgatarSaldo() {
+            const hoje = new Date().toLocaleDateString();
+            const ultimoResgate = localStorage.getItem('ultimoResgate');
+            
+            if (ultimoResgate !== hoje) {
+                registrarTransacao('Resgate diário', 100);
+                localStorage.setItem('ultimoResgate', hoje);
+                alert('R$100 resgatados! Volte amanhã para mais.');
+            } else {
+                alert('Você já resgatou hoje. Volte amanhã!');
             }
+        }
+        
+        // Registra uma transação
+        function registrarTransacao(descricao, valorBruto, isGanho = false) {
+            let valorLiquido = valorBruto;
+            let taxa = 0;
+            
+            // Aplica taxa sobre ganhos
+            if (isGanho && valorBruto > 0) {
+                taxa = valorBruto * TAXA_APOSTAS;
+                valorLiquido = valorBruto - taxa;
+                
+                // Registra a taxa como transação separada
+                registrarTransacao(`Taxa sobre ${descricao.toLowerCase()}`, -taxa);
+            }
+            
+            // Atualiza saldo
+            const saldoAtual = Number(localStorage.getItem('saldo')) || 0;
+            const novoSaldo = saldoAtual + valorLiquido;
+            localStorage.setItem('saldo', novoSaldo);
+            
+            // Adiciona ao extrato
+            const extrato = JSON.parse(localStorage.getItem('extrato')) || [];
+            extrato.push({
+                data: new Date().toISOString(),
+                descricao: descricao,
+                valor: valorLiquido,
+                taxa: isGanho ? taxa : null,
+                saldo: novoSaldo
+            });
+            
+            localStorage.setItem('extrato', JSON.stringify(extrato));
+            
+            // Atualiza a tela
+            updateSaldo();
+            carregarExtrato();
+            
+            return {
+                liquido: valorLiquido,
+                taxa: taxa
+            };
         }
     </script>
 </body>
