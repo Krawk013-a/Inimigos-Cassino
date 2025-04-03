@@ -41,6 +41,20 @@
             font-weight: bold;
             margin: 10px;
         }
+        /* Estilo do rodapé */
+        footer {
+            background-color: #1a1a1a;
+            color: #999;
+            text-align: center;
+            padding: 15px;
+            margin-top: 30px;
+            font-size: 12px;
+            border-top: 1px solid #333;
+        }
+        #commit-version {
+            font-family: monospace;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
@@ -62,12 +76,31 @@
         <h2>🎡 Roleta</h2>
     </div>
 
+    <!-- Rodapé com versão do commit -->
+    <footer>
+        <p>Este site é um simulador educacional (TCC). Não utilize valores reais.</p>
+        <p id="commit-version">Carregando versão...</p>
+    </footer>
+
     <script>
+        // Carrega dados ao abrir a página
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('username').textContent = localStorage.getItem('user') || 'Usuário';
             document.getElementById('saldo').textContent = localStorage.getItem('saldo') || '0';
+            
+            // Busca a versão do GitHub
+            fetch('https://api.github.com/repos/Krawk013-a/Inimigos-Cassino/commits/main')
+                .then(response => response.json())
+                .then(data => {
+                    const commitHash = data.sha.substring(0, 7);
+                    document.getElementById('commit-version').textContent = `Versão: ${commitHash}`;
+                })
+                .catch(() => {
+                    document.getElementById('commit-version').textContent = 'Versão: offline';
+                });
         });
 
+        // Resgata R$100 (1x por dia)
         function resgatarSaldo() {
             const hoje = new Date().toLocaleDateString();
             const ultimoResgate = localStorage.getItem('ultimoResgate');
