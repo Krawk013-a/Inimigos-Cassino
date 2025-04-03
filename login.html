@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Cassino TCC</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -17,52 +19,109 @@
         }
         .login-box {
             background: #1e1e1e;
-            padding: 20px;
+            padding: 30px;
             border-radius: 10px;
-            width: 300px;
+            width: 100%;
+            max-width: 400px;
             text-align: center;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+        h1 {
+            color: #ffcc00;
+            margin-bottom: 20px;
         }
         input {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             margin: 10px 0;
             border: none;
             border-radius: 5px;
+            background: #333;
+            color: white;
         }
         button {
+            width: 100%;
             background: #ffcc00;
             color: black;
             border: none;
-            padding: 10px 20px;
+            padding: 12px;
+            margin: 10px 0;
             border-radius: 5px;
             cursor: pointer;
             font-weight: bold;
+            transition: all 0.2s;
+        }
+        button:hover {
+            background: #ffd633;
+        }
+        .toggle-form {
+            margin-top: 15px;
+            color: #aaa;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        #error {
+            color: #ff3a3a;
+            margin-top: 10px;
+            min-height: 20px;
         }
     </style>
 </head>
 <body>
     <div class="login-box">
         <h1>Cassino TCC</h1>
-        <input type="text" id="username" placeholder="Usuário">
-        <input type="password" id="password" placeholder="Senha">
-        <button onclick="login()">Entrar</button>
-        <p id="error" style="color: red;"></p>
+        <div id="login-form">
+            <input type="email" id="email" placeholder="E-mail">
+            <input type="password" id="password" placeholder="Senha">
+            <button onclick="login()">Entrar</button>
+            <div class="toggle-form" onclick="showRegister()">Não tem conta? Registre-se</div>
+            <div id="error"></div>
+        </div>
+        
+        <div id="register-form" style="display: none;">
+            <input type="text" id="username" placeholder="Nome de usuário">
+            <input type="email" id="new-email" placeholder="E-mail">
+            <input type="password" id="new-password" placeholder="Senha">
+            <button onclick="register()">Registrar</button>
+            <div class="toggle-form" onclick="showLogin()">Já tem conta? Faça login</div>
+            <div id="reg-error"></div>
+        </div>
     </div>
 
     <script>
-        function login() {
-            const username = document.getElementById('username').value;
+        function showRegister() {
+            document.getElementById('login-form').style.display = 'none';
+            document.getElementById('register-form').style.display = 'block';
+        }
+
+        function showLogin() {
+            document.getElementById('register-form').style.display = 'none';
+            document.getElementById('login-form').style.display = 'block';
+        }
+
+        async function login() {
+            const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             
-            if (username && password) {
-                localStorage.setItem('user', username);
-                if (!localStorage.getItem('saldo')) {
-                    localStorage.setItem('saldo', '100'); // Saldo inicial R$100
-                }
+            try {
+                await signIn(email, password);
                 window.location.href = 'painel.html';
-            } else {
-                document.getElementById('error').textContent = 'Preencha todos os campos!';
+            } catch (error) {
+                document.getElementById('error').textContent = error.message;
+            }
+        }
+
+        async function register() {
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('new-email').value;
+            const password = document.getElementById('new-password').value;
+            
+            try {
+                await signUp(email, password, username);
+                alert('Registro realizado com sucesso! Faça login para continuar.');
+                showLogin();
+            } catch (error) {
+                document.getElementById('reg-error').textContent = error.message;
             }
         }
     </script>

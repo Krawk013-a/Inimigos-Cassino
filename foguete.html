@@ -161,6 +161,10 @@
 <body>
     <h1>🚀 Foguete Multiplicador</h1>
     
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="transactions.js"></script>
+    
     <div id="controls">
         <input type="number" id="valorAposta" placeholder="Valor (R$)" min="1">
         <button onclick="iniciarJogo()">Jogar</button>
@@ -317,14 +321,26 @@
         }
 
         // Para o jogo e saca o valor
-        function pararJogo() {
-            clearInterval(fogueteInterval);
-            clearInterval(fumacaInterval);
-            
-            const ganhoBruto = valorAposta * multiplicadorAtual;
-            finalizarJogoComVitória(ganhoBruto, "Foguete");
-            document.getElementById('pararBtn').disabled = true;
-        }
-    </script>
-</body>
-</html>
+        async function finalizarJogoComVitória(ganhoBruto, nomeJogo) {
+    try {
+        const { netValue, tax } = await registerTransaction(
+            `Ganho no ${nomeJogo}`, 
+            ganhoBruto, 
+            true
+        )
+        
+        alert(`🎉 Você ganhou R$${ganhoBruto.toFixed(2)}!\n` +
+              `(Taxa de 12.5%: -R$${tax.toFixed(2)})\n` +
+              `Valor creditado: R$${netValue.toFixed(2)}`)
+        
+        // Atualiza saldo na UI
+        const saldo = await getCurrentBalance()
+        document.getElementById('saldo-value').textContent = 
+            saldo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+
+    } catch (error) {
+        console.error('Erro ao registrar transação:', error)
+        alert('Erro ao processar seu ganho')
+    }
+}
+</script>
