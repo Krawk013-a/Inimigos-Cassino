@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Cassino TCC</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase-config.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -88,24 +87,13 @@
         </div>
     </div>
 
-    <script>
-
-    <script type="module" src="supabase-config.js"></script>
-    
-    function showRegister() {
-            document.getElementById('login-form').style.display = 'none';
-            document.getElementById('register-form').style.display = 'block';
-        }
-
-        function showLogin() {
-            document.getElementById('register-form').style.display = 'none';
-            document.getElementById('login-form').style.display = 'block';
-        }
+    <script type="module">
+        import { signIn, signUp } from './supabase-config.js';
 
         async function login() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            
+
             try {
                 await signIn(email, password);
                 window.location.href = 'painel.html';
@@ -118,7 +106,7 @@
             const username = document.getElementById('username').value;
             const email = document.getElementById('new-email').value;
             const password = document.getElementById('new-password').value;
-            
+
             try {
                 await signUp(email, password, username);
                 alert('Registro realizado com sucesso! Faça login para continuar.');
@@ -127,6 +115,22 @@
                 document.getElementById('reg-error').textContent = error.message;
             }
         }
+
+        function showRegister() {
+            document.getElementById('login-form').style.display = 'none';
+            document.getElementById('register-form').style.display = 'block';
+        }
+
+        function showLogin() {
+            document.getElementById('register-form').style.display = 'none';
+            document.getElementById('login-form').style.display = 'block';
+        }
+
+        // Attach functions to the global scope for button onclick handlers
+        window.login = login;
+        window.register = register;
+        window.showRegister = showRegister;
+        window.showLogin = showLogin;
     </script>
 </body>
 </html>
