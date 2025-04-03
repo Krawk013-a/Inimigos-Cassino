@@ -197,8 +197,24 @@
         document.addEventListener('DOMContentLoaded', function() {
             gameContainer = document.getElementById('game-container');
             updateSaldo();
+            
+            // Busca a versão do GitHub
+            fetch('https://api.github.com/repos/Krawk013-a/Inimigos-Cassino/commits/main')
+                .then(response => response.json())
+                .then(data => {
+                    const commitHash = data.sha.substring(0, 7);
+                    document.getElementById('commit-version').textContent = `Versão: ${commitHash}`;
+                })
+                .catch(() => {
+                    document.getElementById('commit-version').textContent = 'Versão: offline';
+                });
         });
 
+        // Atualiza o saldo na tela
+        function updateSaldo() {
+            document.getElementById('saldo-value').textContent = saldo.toFixed(2);
+            localStorage.setItem('saldo', saldo);
+        }    
         // Atualiza as informações do jogo
         function updateGameInfo() {
             document.getElementById('multiplicador-display').textContent = multiplicadorAtual.toFixed(2) + 'x';
