@@ -54,10 +54,29 @@
             font-weight: bold;
             cursor: pointer;
         }
+        #saldo-display {
+            font-weight: bold;
+            color: #ffcc00;
+            margin: 10px;
+        }
+        footer {
+            background-color: #1a1a1a;
+            color: #999;
+            text-align: center;
+            padding: 15px;
+            margin-top: 30px;
+            font-size: 12px;
+            border-top: 1px solid #333;
+        }
+        #commit-version {
+            font-family: monospace;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
     <h1>🪙 Mines</h1>
+    
     <div id="controls">
         <input type="number" id="valorAposta" placeholder="Valor (R$)" min="1">
         <input type="number" id="numBombas" placeholder="Nº de bombas (1-5)" min="1" max="5" value="1">
@@ -65,9 +84,16 @@
         <button id="pararBtn" onclick="pararJogo()" disabled>Parar e sacar</button>
     </div>
     
+    <div id="saldo-display">Saldo: R$ <span id="saldo-value">0</span></div>
+    
     <div id="mines-grid"></div>
     <p id="resultado"></p>
     <p id="ganho">Ganho potencial: R$0</p>
+
+    <footer>
+        <p>Este site é um simulador educacional (TCC). Não utilize valores reais.</p>
+        <p id="commit-version">Versão: carregando...</p>
+    </footer>
 
     <script>
         let bombPositions = [];
@@ -75,8 +101,23 @@
         let valorAposta = 0;
         let celulasReveladas = 0;
 
+        // Carrega o saldo ao iniciar
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSaldo();
+            // Busca a versão do GitHub
+            fetch('https://api.github.com/repos/SEU_USUARIO/SEU_REPOSITORIO/commits/main')
+                .then(response => response.json())
+                .then(data => {
+                    const commitHash = data.sha.substring(0, 7);
+                    document.getElementById('commit-version').textContent = `Versão: ${commitHash}`;
+                })
+                .catch(() => {
+                    document.getElementById('commit-version').textContent = 'Versão: offline';
+                });
+        });
+
         function updateSaldo() {
-            document.getElementById('saldo').textContent = saldo;
+            document.getElementById('saldo-value').textContent = saldo;
             localStorage.setItem('saldo', saldo);
         }
 
