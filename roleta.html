@@ -5,34 +5,126 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Roleta - Cassino TCC</title>
     <style>
+        :root {
+            --cor-primaria: #ffcc00;
+            --cor-fundo: #121212;
+            --cor-painel: #1e1e1e;
+            --cor-texto: white;
+            --cor-vermelho: #e74c3c;
+            --cor-preto: #2c3e50;
+            --cor-ganho: #4CAF50;
+            --cor-perda: #F44336;
+        }
+        
         body {
-            font-family: Arial, sans-serif;
-            background-color: #121212;
-            color: white;
+            font-family: 'Arial', sans-serif;
+            background-color: var(--cor-fundo);
+            color: var(--cor-texto);
             text-align: center;
             margin: 0;
             padding: 20px;
         }
+        
+        h1 {
+            color: var(--cor-primaria);
+            margin-bottom: 20px;
+        }
+        
+        #controls {
+            background-color: var(--cor-painel);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 0 auto 20px;
+            max-width: 500px;
+        }
+        
+        input, button {
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+            margin: 5px;
+        }
+        
+        input {
+            width: 120px;
+            background-color: #333;
+            color: white;
+        }
+        
+        button {
+            background-color: var(--cor-primaria);
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+            min-width: 100px;
+            transition: all 0.2s;
+        }
+        
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            transform: none !important;
+            box-shadow: none;
+        }
+        
+        .aposta-option {
+            display: inline-block;
+            padding: 12px 24px;
+            margin: 5px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        
+        .aposta-option:hover {
+            transform: scale(1.05);
+        }
+        
+        .vermelho {
+            background-color: var(--cor-vermelho);
+        }
+        
+        .preto {
+            background-color: var(--cor-preto);
+            color: white;
+        }
+        
+        .selecionado {
+            border: 3px solid var(--cor-primaria);
+            box-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+        }
+        
         .roleta-container {
             position: relative;
             width: 320px;
             height: 320px;
             margin: 20px auto;
         }
+        
         #roleta {
             width: 300px;
             height: 300px;
             border-radius: 50%;
             background: conic-gradient(
-                red 0deg 20deg, black 20deg 40deg,
-                red 40deg 60deg, black 60deg 80deg,
-                red 80deg 100deg, black 100deg 120deg,
-                red 120deg 140deg, black 140deg 160deg,
-                red 160deg 180deg, black 180deg 200deg,
-                red 200deg 220deg, black 220deg 240deg,
-                red 240deg 260deg, black 260deg 280deg,
-                red 280deg 300deg, black 300deg 320deg,
-                red 320deg 340deg, black 340deg 360deg
+                var(--cor-vermelho) 0deg 15deg,
+                var(--cor-preto) 15deg 45deg,
+                var(--cor-vermelho) 45deg 60deg,
+                var(--cor-preto) 60deg 90deg,
+                var(--cor-vermelho) 90deg 120deg,
+                var(--cor-preto) 120deg 150deg,
+                var(--cor-vermelho) 150deg 180deg,
+                var(--cor-preto) 180deg 210deg,
+                var(--cor-vermelho) 210deg 240deg,
+                var(--cor-preto) 240deg 270deg,
+                var(--cor-vermelho) 270deg 300deg,
+                var(--cor-preto) 300deg 330deg,
+                var(--cor-vermelho) 330deg 360deg
             );
             position: absolute;
             top: 0;
@@ -40,6 +132,7 @@
             transform: translateX(-50%);
             transition: transform 3s cubic-bezier(0.1, 0.7, 0.1, 1);
         }
+        
         #seta {
             position: absolute;
             top: -15px;
@@ -47,8 +140,9 @@
             transform: translateX(-50%);
             font-size: 40px;
             z-index: 10;
-            color: #ffcc00;
+            color: var(--cor-primaria);
         }
+        
         .base {
             width: 320px;
             height: 20px;
@@ -59,65 +153,85 @@
             left: 50%;
             transform: translateX(-50%);
         }
-        #controls {
+        
+        #info-panel {
+            background-color: var(--cor-painel);
+            padding: 15px;
+            border-radius: 10px;
             margin: 20px auto;
+            max-width: 500px;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 15px;
         }
-        input, button {
-            padding: 10px;
-            margin: 10px;
-            border-radius: 5px;
-            border: none;
+        
+        .info-item {
+            margin: 0;
         }
-        button {
-            background: #ffcc00;
-            color: black;
+        
+        .info-value {
+            color: var(--cor-primaria);
             font-weight: bold;
-            cursor: pointer;
+            font-size: 1.2em;
         }
-        .aposta-option {
-            display: inline-block;
-            padding: 10px 20px;
-            margin: 5px;
+        
+        #resultado {
+            min-height: 24px;
+            font-size: 18px;
+            margin: 10px 0;
+            padding: 10px;
             border-radius: 5px;
-            cursor: pointer;
         }
-        .vermelho {
-            background: red;
+        
+        .ganho {
+            background-color: rgba(76, 175, 80, 0.2);
+            color: var(--cor-ganho);
         }
-        .preto {
-            background: black;
-            color: white;
-        }
-        .selecionado {
-            border: 3px solid #ffcc00;
+        
+        .perda {
+            background-color: rgba(244, 67, 54, 0.2);
+            color: var(--cor-perda);
         }
     </style>
 </head>
 <body>
     <h1>🎡 Roleta</h1>
+    
     <div id="controls">
-        <input type="number" id="valorAposta" placeholder="Valor (R$)" min="1" value="10">
+        <input type="number" id="valorAposta" placeholder="Valor (R$)" min="1">
         <p>Escolha uma cor:</p>
         <div class="aposta-option vermelho selecionado" onclick="selecionarCor('vermelho')">Vermelho</div>
         <div class="aposta-option preto" onclick="selecionarCor('preto')">Preto</div>
+        <button onclick="girarRoleta()">Girar!</button>
     </div>
-    <button onclick="girarRoleta()">Girar!</button>
     
     <div class="roleta-container">
         <div id="seta">▼</div>
         <div id="roleta"></div>
         <div class="base"></div>
     </div>
+    
+    <div id="info-panel">
+        <div class="info-item">Saldo: <span class="info-value" id="saldo-value">0</span></div>
+        <div class="info-item">Aposta: <span class="info-value" id="aposta-value">0</span></div>
+    </div>
+    
     <p id="resultado"></p>
 
+    <script src="common.js"></script>
     <script>
         let saldo = Number(localStorage.getItem('saldo')) || 0;
         let corAposta = 'vermelho';
+        let valorAposta = 0;
+        let podeGirar = true;
 
+        // Atualiza o saldo na tela
         function updateSaldo() {
-            localStorage.setItem('saldo', saldo);
+            document.getElementById('saldo-value').textContent = saldo.toFixed(2);
         }
 
+        // Seleciona a cor da aposta
         function selecionarCor(cor) {
             corAposta = cor;
             document.querySelectorAll('.aposta-option').forEach(el => {
@@ -126,36 +240,60 @@
             document.querySelector(`.${cor}`).classList.add('selecionado');
         }
 
+        // Gira a roleta
         function girarRoleta() {
-            const valorAposta = Number(document.getElementById('valorAposta').value);
+            valorAposta = Number(document.getElementById('valorAposta').value);
+            
+            if (!podeGirar) return;
             if (valorAposta < 1 || valorAposta > saldo) {
                 alert('Aposta inválida ou saldo insuficiente!');
                 return;
             }
 
-            saldo -= valorAposta;
-            updateSaldo();
+            podeGirar = false;
+            document.getElementById('resultado').textContent = '';
+            document.getElementById('aposta-value').textContent = valorAposta.toFixed(2);
+            
+            // Deduz a aposta
+            registrarTransacao("Aposta na Roleta", -valorAposta);
             
             const roleta = document.getElementById('roleta');
             const resultado = document.getElementById('resultado');
-            const voltas = Math.floor(Math.random() * 9) + 2;
-            const anguloFinal = (Math.floor(Math.random() * 18)) * 20;
-            const giroTotal = (voltas * 360) + anguloFinal;
+            const giro = Math.floor(Math.random() * 3600) + 720; // 2-10 voltas
+            const anguloFinal = giro % 360;
 
-            roleta.style.transform = `translateX(-50%) rotate(${giroTotal}deg)`;
+            roleta.style.transition = 'transform 3s ease-out';
+            roleta.style.transform = `translateX(-50%) rotate(${giro}deg)`;
 
             setTimeout(() => {
-                const corSorteada = (anguloFinal % 40 === 0) ? 'vermelho' : 'preto';
-                if (corAposta === corSorteada) {
-                    const ganho = valorAposta * 2;
-                    saldo += ganho;
-                    updateSaldo();
-                    resultado.textContent = `🎉 ${corSorteada.toUpperCase()}! Você ganhou R$${ganho}!`;
+                podeGirar = true;
+                let corSorteada;
+                
+                // Determina a cor sorteada
+                if ((anguloFinal >= 0 && anguloFinal < 15) || 
+                    (anguloFinal >= 45 && anguloFinal < 60) || 
+                    (anguloFinal >= 90 && anguloFinal < 120) || 
+                    (anguloFinal >= 150 && anguloFinal < 180) || 
+                    (anguloFinal >= 210 && anguloFinal < 240) || 
+                    (anguloFinal >= 270 && anguloFinal < 300) || 
+                    (anguloFinal >= 330 && anguloFinal < 360)) {
+                    corSorteada = 'vermelho';
                 } else {
-                    resultado.textContent = `💸 ${corSorteada.toUpperCase()}! Você perdeu R$${valorAposta}.`;
+                    corSorteada = 'preto';
+                }
+
+                if (corAposta === corSorteada) {
+                    const ganhoBruto = valorAposta * 2;
+                    finalizarJogoComVitória(ganhoBruto, "Roleta");
+                } else {
+                    resultado.textContent = `💸 ${corSorteada.toUpperCase()}! Você perdeu R$${valorAposta.toFixed(2)}.`;
+                    resultado.className = 'perda';
                 }
             }, 3000);
         }
+
+        // Carrega os dados ao iniciar
+        document.addEventListener('DOMContentLoaded', updateSaldo);
     </script>
 </body>
 </html>

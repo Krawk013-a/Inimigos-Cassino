@@ -36,6 +36,9 @@ function registrarTransacao(descricao, valorBruto, isGanho = false) {
     
     localStorage.setItem('extrato', JSON.stringify(extrato));
     
+    // Atualiza a tela
+    updateSaldo();
+    
     return {
         liquido: valorLiquido,
         taxa: taxa
@@ -70,13 +73,15 @@ function finalizarJogoComVitória(ganhoBruto, nomeJogo) {
                      `Valor creditado: R$${resultado.liquido.toFixed(2)}`;
     
     alert(mensagem);
-    updateSaldo();
     
     // Atualiza a mensagem de resultado se existir na página
     const resultadoElement = document.getElementById('resultado');
     if (resultadoElement) {
         resultadoElement.innerHTML = 
-            `Você ganhou R$${resultado.liquido.toFixed(2)}<br>` +
+            `🎉 ${nomeJogo}: Ganho de R$${resultado.liquido.toFixed(2)}<br>` +
             `<small>Taxa de 12.5%: R$${resultado.taxa.toFixed(2)}</small>`;
+        resultadoElement.className = 'ganho';
     }
+    
+    updateSaldo();
 }
