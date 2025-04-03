@@ -5,111 +5,364 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Foguete - Cassino TCC</title>
     <style>
+        :root {
+            --cor-primaria: #ffcc00;
+            --cor-fundo: #121212;
+            --cor-painel: #1e1e1e;
+            --cor-texto: white;
+            --cor-explosao: #ff3a3a;
+        }
+        
         body {
-            font-family: Arial, sans-serif;
-            background-color: #121212;
-            color: white;
+            font-family: 'Arial', sans-serif;
+            background-color: var(--cor-fundo);
+            color: var(--cor-texto);
             text-align: center;
             margin: 0;
             padding: 20px;
+            min-height: 100vh;
         }
-        #foguete-container {
-            height: 300px;
-            position: relative;
-            margin: 20px auto;
-            overflow: hidden;
-            border: 2px solid #333;
-            border-radius: 10px;
+        
+        h1 {
+            color: var(--cor-primaria);
+            margin-bottom: 20px;
         }
-        #foguete {
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 40px;
-            transition: transform 0.1s linear;
-        }
-        #multiplicador {
-            font-size: 24px;
-            margin: 20px;
-        }
+        
         #controls {
-            margin: 20px auto;
+            background-color: var(--cor-painel);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 0 auto 20px;
+            max-width: 500px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
         }
+        
         input, button {
-            padding: 10px;
-            margin: 10px;
-            border-radius: 5px;
+            padding: 12px 15px;
+            border-radius: 8px;
             border: none;
+            font-size: 16px;
         }
+        
+        input {
+            width: 120px;
+            background-color: #333;
+            color: white;
+        }
+        
         button {
-            background: #ffcc00;
+            background-color: var(--cor-primaria);
             color: black;
             font-weight: bold;
             cursor: pointer;
+            transition: all 0.2s;
+            min-width: 100px;
+        }
+        
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            transform: none !important;
+            box-shadow: none;
+        }
+        
+        #game-container {
+            position: relative;
+            height: 400px;
+            margin: 20px auto;
+            background: linear-gradient(to bottom, #000428, #004e92);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid #333;
+            max-width: 600px;
+        }
+        
+        #foguete {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 50px;
+            transition: transform 0.1s linear;
+            z-index: 10;
+            filter: drop-shadow(0 0 5px rgba(255, 204, 0, 0.7));
+        }
+        
+        #multiplicador-display {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--cor-primaria);
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 5px 15px;
+            border-radius: 20px;
+            z-index: 5;
+        }
+        
+        .explosao {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, #ff6600, #ff0000);
+            border-radius: 50%;
+            opacity: 0;
+            z-index: 15;
+        }
+        
+        #info-panel {
+            background-color: var(--cor-painel);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px auto;
+            max-width: 500px;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .info-item {
+            margin: 0;
+        }
+        
+        .info-value {
+            color: var(--cor-primaria);
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        
+        #resultado {
+            min-height: 24px;
+            font-size: 18px;
+            margin: 10px 0;
+        }
+        
+        footer {
+            background-color: #1a1a1a;
+            color: #999;
+            text-align: center;
+            padding: 15px;
+            margin-top: 30px;
+            font-size: 12px;
+            border-top: 1px solid #333;
+        }
+        
+        #commit-version {
+            font-family: monospace;
+            margin-top: 5px;
+        }
+        
+        /* Efeitos de fumaça */
+        .fumaca {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #888;
+            border-radius: 50%;
+            opacity: 0.7;
+            z-index: 5;
         }
     </style>
 </head>
 <body>
-    <h1>🚀 Foguete</h1>
+    <h1>🚀 Foguete Multiplicador</h1>
+    
     <div id="controls">
-        <input type="number" id="aposta" placeholder="Valor (R$)" min="1">
+        <input type="number" id="valorAposta" placeholder="Valor (R$)" min="1">
         <button onclick="iniciarJogo()">Jogar</button>
-        <button id="pararBtn" onclick="pararJogo()" disabled>Parar</button>
+        <button id="pararBtn" onclick="pararJogo()" disabled>Sacar</button>
     </div>
     
-    <div id="foguete-container">
+    <div id="game-container">
         <div id="foguete">🚀</div>
+        <div id="multiplicador-display">1.00x</div>
     </div>
-    <div id="multiplicador">Multiplicador: 1.00x</div>
+    
+    <div id="info-panel">
+        <div class="info-item">Saldo: <span class="info-value" id="saldo-value">0</span></div>
+        <div class="info-item">Aposta: <span class="info-value" id="aposta-value">0</span></div>
+        <div class="info-item">Ganho: <span class="info-value" id="ganho-value">0</span></div>
+    </div>
+    
     <p id="resultado"></p>
 
-    <script>
-        let multiplicador = 1;
-        let fogueteInterval;
-        let saldo = Number(localStorage.getItem('saldo')) || 0;
-        let aposta = 0;
+    <footer>
+        <p>Este site é um simulador educacional (TCC). Não utilize valores reais.</p>
+        <p id="commit-version">Versão: carregando...</p>
+    </footer>
 
+    <script>
+        // Variáveis do jogo
+        let saldo = Number(localStorage.getItem('saldo')) || 0;
+        let valorAposta = 0;
+        let multiplicadorAtual = 1;
+        let fogueteInterval;
+        let alturaAtual = 0;
+        let gameContainer;
+        let velocidade = 0.5;
+        let chanceExplosao = 0.001;
+        let fumacaInterval;
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            gameContainer = document.getElementById('game-container');
+            updateSaldo();
+            
+            // Busca a versão do GitHub
+            fetch('https://api.github.com/repos/Krawk013-a/Inimigos-Cassino/commits/main')
+                .then(response => response.json())
+                .then(data => {
+                    const commitHash = data.sha.substring(0, 7);
+                    document.getElementById('commit-version').textContent = `Versão: ${commitHash}`;
+                })
+                .catch(() => {
+                    document.getElementById('commit-version').textContent = 'Versão: offline';
+                });
+        });
+
+        // Atualiza o saldo na tela
         function updateSaldo() {
+            document.getElementById('saldo-value').textContent = saldo.toFixed(2);
             localStorage.setItem('saldo', saldo);
         }
 
+        // Atualiza as informações do jogo
+        function updateGameInfo() {
+            document.getElementById('multiplicador-display').textContent = multiplicadorAtual.toFixed(2) + 'x';
+            document.getElementById('ganho-value').textContent = (valorAposta * multiplicadorAtual).toFixed(2);
+        }
+
+        // Cria efeito de fumaça
+        function criarFumaca() {
+            const foguete = document.getElementById('foguete');
+            const rect = foguete.getBoundingClientRect();
+            const containerRect = gameContainer.getBoundingClientRect();
+            
+            const fumaca = document.createElement('div');
+            fumaca.className = 'fumaca';
+            fumaca.style.left = (rect.left - containerRect.left + 20 + Math.random() * 10) + 'px';
+            fumaca.style.bottom = '0px';
+            gameContainer.appendChild(fumaca);
+            
+            // Animação da fumaça
+            let pos = 0;
+            const fadeInterval = setInterval(() => {
+                pos += 2;
+                fumaca.style.bottom = pos + 'px';
+                fumaca.style.opacity = 1 - (pos / 100);
+                fumaca.style.transform = `scale(${1 + pos/50})`;
+                
+                if (pos > 80) {
+                    clearInterval(fadeInterval);
+                    fumaca.remove();
+                }
+            }, 50);
+        }
+
+        // Efeito de explosão
+        function criarExplosao() {
+            const foguete = document.getElementById('foguete');
+            const rect = foguete.getBoundingClientRect();
+            const containerRect = gameContainer.getBoundingClientRect();
+            
+            const explosao = document.createElement('div');
+            explosao.className = 'explosao';
+            explosao.style.left = (rect.left - containerRect.left - 50) + 'px';
+            explosao.style.top = (rect.top - containerRect.top - 50) + 'px';
+            gameContainer.appendChild(explosao);
+            
+            // Animação da explosão
+            let scale = 0.5;
+            const explodeInterval = setInterval(() => {
+                scale += 0.1;
+                explosao.style.transform = `scale(${scale})`;
+                explosao.style.opacity = 1 - (scale / 10);
+                
+                if (scale > 5) {
+                    clearInterval(explodeInterval);
+                    explosao.remove();
+                }
+            }, 50);
+        }
+
+        // Inicia um novo jogo
         function iniciarJogo() {
-            aposta = Number(document.getElementById('aposta').value);
-            if (aposta < 1 || aposta > saldo) {
+            valorAposta = Number(document.getElementById('valorAposta').value);
+            
+            if (valorAposta < 1 || valorAposta > saldo) {
                 alert('Aposta inválida ou saldo insuficiente!');
                 return;
             }
 
-            saldo -= aposta;
-            updateSaldo();
-            
-            multiplicador = 1;
+            // Resetar jogo
+            clearInterval(fogueteInterval);
+            clearInterval(fumacaInterval);
             document.getElementById('resultado').textContent = '';
-            document.getElementById('foguete').style.transform = 'translateX(-50%) scale(1)';
             document.getElementById('pararBtn').disabled = false;
+            document.getElementById('foguete').style.transform = 'translateX(-50%) translateY(0)';
             
+            // Deduz a aposta
+            saldo -= valorAposta;
+            updateSaldo();
+            document.getElementById('aposta-value').textContent = valorAposta.toFixed(2);
+            
+            // Configurações iniciais
+            multiplicadorAtual = 1;
+            alturaAtual = 0;
+            velocidade = 0.5;
+            chanceExplosao = 0.001;
+            updateGameInfo();
+            
+            // Inicia a fumaça
+            fumacaInterval = setInterval(criarFumaca, 200);
+            
+            // Inicia o movimento do foguete
             fogueteInterval = setInterval(() => {
-                multiplicador += 0.05;
-                document.getElementById('multiplicador').textContent = `Multiplicador: ${multiplicador.toFixed(2)}x`;
+                // Aumenta a velocidade e o multiplicador
+                velocidade *= 1.005;
+                multiplicadorAtual += 0.01 * velocidade;
                 
-                const altura = Math.min(multiplicador * 20, 250);
-                document.getElementById('foguete').style.transform = `translateX(-50%) translateY(-${altura}px) scale(${1 + multiplicador * 0.1})`;
+                // Move o foguete
+                alturaAtual += velocidade;
+                document.getElementById('foguete').style.transform = `translateX(-50%) translateY(-${alturaAtual}px)`;
                 
-                if (Math.random() < 0.01 * multiplicador) {
+                // Aumenta a chance de explosão
+                chanceExplosao += 0.0001 * velocidade;
+                
+                // Verifica se explodiu
+                if (Math.random() < chanceExplosao) {
                     clearInterval(fogueteInterval);
-                    document.getElementById('resultado').textContent = `💥 Foguete explodiu! Você perdeu R$${aposta}.`;
+                    clearInterval(fumacaInterval);
+                    criarExplosao();
+                    document.getElementById('foguete').textContent = '💥';
+                    document.getElementById('resultado').textContent = `💥 Foguete explodiu em ${multiplicadorAtual.toFixed(2)}x!`;
                     document.getElementById('pararBtn').disabled = true;
                 }
-            }, 100);
+                
+                updateGameInfo();
+            }, 50);
         }
 
+        // Para o jogo e saca o valor
         function pararJogo() {
             clearInterval(fogueteInterval);
-            const ganho = aposta * multiplicador;
+            clearInterval(fumacaInterval);
+            
+            const ganho = valorAposta * multiplicadorAtual;
             saldo += ganho;
             updateSaldo();
-            document.getElementById('resultado').textContent = `🎉 Você ganhou R$${ganho.toFixed(2)}!`;
+            
+            document.getElementById('resultado').textContent = `🎉 Você sacou R$${ganho.toFixed(2)} (${multiplicadorAtual.toFixed(2)}x)!`;
             document.getElementById('pararBtn').disabled = true;
         }
     </script>
