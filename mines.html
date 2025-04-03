@@ -30,21 +30,28 @@
             font-size: 24px;
             cursor: pointer;
             border-radius: 5px;
+            transition: all 0.3s;
         }
         .revealed {
             background: #ffcc00;
             color: black;
+            transform: scale(0.95);
         }
         .bomb {
             background: red;
             color: white;
+            transform: scale(0.9);
         }
         #controls {
             margin: 20px auto;
+            background: #1e1e1e;
+            padding: 15px;
+            border-radius: 10px;
+            max-width: 500px;
         }
         input, button {
             padding: 10px;
-            margin: 10px;
+            margin: 5px;
             border-radius: 5px;
             border: none;
         }
@@ -53,11 +60,31 @@
             color: black;
             font-weight: bold;
             cursor: pointer;
+            transition: all 0.2s;
         }
-        #saldo-display {
-            font-weight: bold;
+        button:hover {
+            transform: scale(1.05);
+        }
+        button:disabled {
+            opacity: 0.5;
+            transform: none !important;
+        }
+        #info-panel {
+            background: #1e1e1e;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px auto;
+            max-width: 500px;
+            display: flex;
+            justify-content: space-around;
+        }
+        .info-item {
+            margin: 0 10px;
+        }
+        #multiplicador {
             color: #ffcc00;
-            margin: 10px;
+            font-weight: bold;
+            font-size: 1.2em;
         }
         footer {
             background-color: #1a1a1a;
@@ -81,14 +108,17 @@
         <input type="number" id="valorAposta" placeholder="Valor (R$)" min="1">
         <input type="number" id="numBombas" placeholder="Nº de bombas (1-5)" min="1" max="5" value="1">
         <button onclick="iniciarJogo()">Jogar</button>
-        <button id="pararBtn" onclick="pararJogo()" disabled>Parar e sacar</button>
+        <button id="pararBtn" onclick="pararJogo()" disabled>Sacar</button>
     </div>
     
-    <div id="saldo-display">Saldo: R$ <span id="saldo-value">0</span></div>
+    <div id="info-panel">
+        <div class="info-item">Saldo: R$ <span id="saldo-value">0</span></div>
+        <div class="info-item">Multiplicador: <span id="multiplicador">1.00x</span></div>
+        <div class="info-item">Ganho potencial: R$ <span id="ganho">0</span></div>
+    </div>
     
     <div id="mines-grid"></div>
-    <p id="resultado"></p>
-    <p id="ganho">Ganho potencial: R$0</p>
+    <p id="resultado" style="min-height: 24px;"></p>
 
     <footer>
         <p>Este site é um simulador educacional (TCC). Não utilize valores reais.</p>
@@ -96,10 +126,14 @@
     </footer>
 
     <script>
+        // Variáveis do jogo
         let bombPositions = [];
         let saldo = Number(localStorage.getItem('saldo')) || 0;
         let valorAposta = 0;
         let celulasReveladas = 0;
+        let multiplicadorAtual = 1;
+        let multiplicadorBase = 1;
+        let incrementoMultiplicador = 0;
 
         // Carrega o saldo ao iniciar
         document.addEventListener('DOMContentLoaded', function() {
@@ -116,11 +150,25 @@
                 });
         });
 
+        // Atualiza o saldo na tela e no localStorage
         function updateSaldo() {
             document.getElementById('saldo-value').textContent = saldo;
             localStorage.setItem('saldo', saldo);
         }
 
+        // Atualiza o multiplicador na tela
+        function updateMultiplicador() {
+            document.getElementById('multiplicador').textContent = multiplicadorAtual.toFixed(2) + 'x';
+            updateGanhoPotencial();
+        }
+
+        // Atualiza o ganho potencial
+        function updateGanhoPotencial() {
+            const ganho = valorAposta * multiplicadorAtual;
+            document.getElementById('ganho').textContent = ganho.toFixed(2);
+        }
+
+        // Inicia um novo jogo
         function iniciarJogo() {
             valorAposta = Number(document.getElementById('valorAposta').value);
             const numBombas = parseInt(document.getElementById('numBombas').value);
@@ -130,15 +178,30 @@
                 return;
             }
 
+            // Configura o multiplicador baseado no número de bombas
+            switch(numBombas) {
+                case 1: multiplicadorBase = 1.1; incrementoMultiplicador = 0.1; break;
+                case 2: multiplicadorBase = 1.2; incrementoMultiplicador = 0.15; break;
+                case 3: multiplicadorBase = 1.3; incrementoMultiplicador = 0.2; break;
+                case 4: multiplicadorBase = 1.4; incrementoMultiplicador = 0.25; break;
+                case 5: multiplicadorBase = 1.5; incrementoMultiplicador = 0.3; break;
+            }
+            
+            multiplicadorAtual = multiplicadorBase;
+            updateMultiplicador();
+
+            // Deduz a aposta do saldo
             saldo -= valorAposta;
             updateSaldo();
             
+            // Gera as posições das bombas
             bombPositions = [];
             while (bombPositions.length < numBombas) {
                 const pos = Math.floor(Math.random() * 25);
                 if (!bombPositions.includes(pos)) bombPositions.push(pos);
             }
 
+            // Cria a grade do jogo
             const grid = document.getElementById('mines-grid');
             grid.innerHTML = '';
             celulasReveladas = 0;
@@ -151,35 +214,54 @@
 
             document.getElementById('resultado').textContent = '';
             document.getElementById('pararBtn').disabled = false;
-            atualizarGanho();
         }
 
+        // Revela uma célula quando clicada
         function revelarCelula(pos, cell) {
             if (bombPositions.includes(pos)) {
+                // Clicou em uma bomba - fim de jogo
                 cell.className = 'cell bomb';
                 cell.textContent = '💣';
-                document.getElementById('resultado').textContent = 'Você perdeu!';
+                document.getElementById('resultado').textContent = 'Você perdeu! 💥';
                 document.getElementById('pararBtn').disabled = true;
+                
+                // Mostra todas as bombas
+                bombPositions.forEach(bombPos => {
+                    const bombCell = document.getElementById('mines-grid').children[bombPos];
+                    if (bombCell !== cell) {
+                        bombCell.className = 'cell bomb';
+                        bombCell.textContent = '💣';
+                    }
+                });
             } else {
+                // Célula segura - aumenta multiplicador
                 cell.className = 'cell revealed';
-                const premio = Math.floor(Math.random() * 50) + 10;
-                cell.textContent = `R$${premio}`;
+                cell.textContent = multiplicadorAtual.toFixed(1) + 'x';
                 celulasReveladas++;
-                atualizarGanho();
+                
+                // Aumenta o multiplicador
+                multiplicadorAtual += incrementoMultiplicador;
+                updateMultiplicador();
+                
+                // Atualiza o resultado
+                document.getElementById('resultado').textContent = `Continue! Multiplicador: ${multiplicadorAtual.toFixed(2)}x`;
             }
         }
 
-        function atualizarGanho() {
-            const ganho = valorAposta + (celulasReveladas * 10);
-            document.getElementById('ganho').textContent = `Ganho potencial: R$${ganho}`;
-        }
-
+        // Finaliza o jogo e recebe o prêmio
         function pararJogo() {
-            const ganho = valorAposta + (celulasReveladas * 10);
+            const ganho = valorAposta * multiplicadorAtual;
             saldo += ganho;
             updateSaldo();
-            document.getElementById('resultado').textContent = `🎉 Você sacou R$${ganho}!`;
+            document.getElementById('resultado').textContent = `🎉 Você sacou R$${ganho.toFixed(2)} (${multiplicadorAtual.toFixed(2)}x)!`;
             document.getElementById('pararBtn').disabled = true;
+            
+            // Revela todas as bombas
+            bombPositions.forEach(bombPos => {
+                const bombCell = document.getElementById('mines-grid').children[bombPos];
+                bombCell.className = 'cell bomb';
+                bombCell.textContent = '💣';
+            });
         }
     </script>
 </body>
