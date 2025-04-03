@@ -253,17 +253,24 @@
 
         // Finaliza o jogo e recebe o prêmio
         function pararJogo() {
-            const ganhoBruto = valorAposta * multiplicadorAtual;
-            finalizarJogoComVitória(ganhoBruto, "Mines");
-            document.getElementById('pararBtn').disabled = true;
-            
-            // Mostra todas as bombas
-            bombPositions.forEach(pos => {
-                const cell = document.getElementById('mines-grid').children[pos];
-                cell.className = 'cell bomb';
-                cell.textContent = '💣';
-            });
-        }
+        const ganhoBruto = valorAposta * multiplicadorAtual;
+        const taxa = 0.125;  
+        const ganhoLiquido = ganhoBruto * (1 - taxa);
+
+        saldo += ganhoLiquido;  // Adiciona o valor ao saldo
+        updateSaldo();
+
+        document.getElementById('resultado').textContent = `Você ganhou R$ ${ganhoLiquido.toFixed(2)}!`;
+
+        document.getElementById('pararBtn').disabled = true;
+
+        // Mostra todas as bombas
+        bombPositions.forEach(pos => {
+            const cell = document.getElementById('mines-grid').children[pos];
+            cell.className = 'cell bomb';
+            cell.textContent = '💣';
+        });
+    }
     </script>
 </body>
 </html>
