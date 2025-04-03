@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mines - Cassino TCC</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        #mines-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 60px);
+            gap: 10px;
+            margin: 20px auto;
+            justify-content: center;
+        }
+        .cell {
+            width: 60px;
+            height: 60px;
+            background: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .cell:hover {
+            background: #444;
+        }
+        .revealed {
+            background: #ffcc00;
+            color: black;
+        }
+        .bomb {
+            background: red;
+            color: white;
+        }
+        #aposta {
+            padding: 10px;
+            width: 100px;
+            margin: 10px;
+        }
+        button {
+            background: #ffcc00;
+            color: black;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>🪙 Mines</h1>
+    <p>Escolha 1 a 5 bombas. Clique nas células para ganhar!</p>
+    
+    <input type="number" id="aposta" min="1" max="5" value="1" placeholder="Nº de bombas">
+    <button onclick="iniciarJogo()">Jogar</button>
+    
+    <div id="mines-grid"></div>
+    <p id="resultado"></p>
+
+    <script>
+        let bombPositions = [];
+        let saldo = Number(localStorage.getItem('saldo')) || 0;
+
+        function iniciarJogo() {
+            const numBombas = parseInt(document.getElementById('aposta').value);
+            if (numBombas < 1 || numBombas > 5) {
+                alert('Escolha entre 1 e 5 bombas!');
+                return;
+            }
+
+            // Gera bombas aleatórias
+            bombPositions = [];
+            while (bombPositions.length < numBombas) {
+                const pos = Math.floor(Math.random() * 25);
+                if (!bombPositions.includes(pos)) bombPositions.push(pos);
+            }
+
+            // Cria a grade
+            const grid = document.getElementById('mines-grid');
+            grid.innerHTML = '';
+            for (let i = 0; i < 25; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.onclick = () => revelarCelula(i, cell);
+                grid.appendChild(cell);
+            }
+
+            document.getElementById('resultado').textContent = '';
+        }
+
+        function revelarCelula(pos, cell) {
+            if (bombPositions.includes(pos)) {
+                cell.className = 'cell bomb';
+                cell.textContent = '💣';
+                document.getElementById('resultado').textContent = 'Você perdeu!';
+                setTimeout(() => iniciarJogo(), 2000);
+            } else {
+                cell.className = 'cell revealed';
+                const premio = Math.floor(Math.random() * 50) + 10;
+                cell.textContent = `R$${premio}`;
+                saldo += premio;
+                localStorage.setItem('saldo', saldo);
+            }
+        }
+    </script>
+</body>
+</html>

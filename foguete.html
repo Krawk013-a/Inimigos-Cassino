@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Foguete - Cassino TCC</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        #foguete-container {
+            height: 300px;
+            position: relative;
+            margin: 20px auto;
+            overflow: hidden;
+        }
+        #foguete {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 40px;
+            transition: transform 0.1s linear;
+        }
+        #multiplicador {
+            font-size: 24px;
+            margin: 20px;
+        }
+        button {
+            background: #ffcc00;
+            color: black;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        input {
+            padding: 10px;
+            margin: 10px;
+            width: 100px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚀 Foguete</h1>
+    <p>Aperte "Parar" antes do foguete explodir!</p>
+    
+    <input type="number" id="aposta" placeholder="Valor (R$)" min="1">
+    <button onclick="iniciarJogo()">Jogar</button>
+    
+    <div id="foguete-container">
+        <div id="foguete">🚀</div>
+    </div>
+    <div id="multiplicador">Multiplicador: 1.00x</div>
+    <p id="resultado"></p>
+
+    <script>
+        let multiplicador = 1;
+        let fogueteInterval;
+        let saldo = Number(localStorage.getItem('saldo')) || 0;
+
+        function iniciarJogo() {
+            const aposta = Number(document.getElementById('aposta').value);
+            if (aposta < 1 || aposta > saldo) {
+                alert('Aposta inválida ou saldo insuficiente!');
+                return;
+            }
+
+            multiplicador = 1;
+            document.getElementById('resultado').textContent = '';
+            document.getElementById('foguete').style.transform = 'translateX(-50%) scale(1)';
+            
+            // Movimenta o foguete
+            fogueteInterval = setInterval(() => {
+                multiplicador += 0.05;
+                document.getElementById('multiplicador').textContent = `Multiplicador: ${multiplicador.toFixed(2)}x`;
+                
+                const altura = Math.min(multiplicador * 20, 250);
+                document.getElementById('foguete').style.transform = `translateX(-50%) translateY(-${altura}px) scale(${1 + multiplicador * 0.1})`;
+                
+                // Explode aleatoriamente
+                if (Math.random() < 0.01 * multiplicador) {
+                    clearInterval(fogueteInterval);
+                    document.getElementById('resultado').textContent = `💥 Foguete explodiu! Você perdeu R$${aposta}.`;
+                    saldo -= aposta;
+                    localStorage.setItem('saldo', saldo);
+                }
+            }, 100);
+        }
+
+        // Função para parar manualmente (adicione um botão "Parar" se quiser)
+        function pararJogo() {
+            clearInterval(fogueteInterval);
+            const aposta = Number(document.getElementById('aposta').value);
+            const ganho = aposta * multiplicador;
+            document.getElementById('resultado').textContent = `🎉 Você ganhou R$${ganho.toFixed(2)}!`;
+            saldo += ganho;
+            localStorage.setItem('saldo', saldo);
+        }
+    </script>
+</body>
+</html>

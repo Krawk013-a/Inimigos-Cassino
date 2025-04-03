@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel - Cassino TCC</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        .saldo {
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px auto;
+            width: 80%;
+            max-width: 400px;
+        }
+        .game-option {
+            background-color: #1e1e1e;
+            border: 2px solid #ffcc00;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 10px;
+            display: inline-block;
+            width: 200px;
+            cursor: pointer;
+        }
+        button {
+            background: #ffcc00;
+            color: black;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Bem-vindo, <span id="username"></span>!</h1>
+    
+    <div class="saldo">
+        <h2>Saldo: R$ <span id="saldo">0</span></h2>
+        <button onclick="resgatarSaldo()">Resgatar R$100 (1x/dia)</button>
+    </div>
+
+    <h2>Escolha um jogo:</h2>
+    <div class="game-option" onclick="window.location.href='mines.html'">
+        <h2>🪙 Mines</h2>
+    </div>
+    <div class="game-option" onclick="window.location.href='foguete.html'">
+        <h2>🚀 Foguete</h2>
+    </div>
+    <div class="game-option" onclick="window.location.href='roleta.html'">
+        <h2>🎡 Roleta</h2>
+    </div>
+
+    <script>
+        // Mostra o nome do usuário
+        document.getElementById('username').textContent = localStorage.getItem('user') || 'Usuário';
+        
+        // Atualiza o saldo
+        function updateSaldo() {
+            document.getElementById('saldo').textContent = localStorage.getItem('saldo') || '0';
+        }
+        updateSaldo();
+
+        // Resgata R$100 (1x por dia)
+        function resgatarSaldo() {
+            const hoje = new Date().toLocaleDateString();
+            const ultimoResgate = localStorage.getItem('ultimoResgate');
+            
+            if (ultimoResgate !== hoje) {
+                const novoSaldo = Number(localStorage.getItem('saldo')) + 100;
+                localStorage.setItem('saldo', novoSaldo);
+                localStorage.setItem('ultimoResgate', hoje);
+                updateSaldo();
+                alert('R$100 resgatados! Volte amanhã para mais.');
+            } else {
+                alert('Você já resgatou hoje. Volte amanhã!');
+            }
+        }
+    </script>
+</body>
+</html>
