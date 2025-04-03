@@ -139,21 +139,10 @@
         let incrementoMultiplicador = 0;
 
         // Carrega o saldo ao iniciar
-        
-        // Finaliza o jogo com vitória e atualiza saldo e transações
-        function finalizarJogoComVitória(valorGanho, origem = "Jogo") {
-            saldo += valorGanho;
-            registrarTransacao(`Ganho (${origem})`, valorGanho);
-            updateSaldo();
-            const resultado = document.getElementById('resultado');
-            resultado.textContent = `🎉 Você ganhou R$${valorGanho.toFixed(2)}!`;
-            resultado.className = 'ganho';
-        }
-    
-document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function() {
             updateSaldo();
             // Busca a versão do GitHub
-            fetch('https://api.github.com/repos/Krawk013-a/Inimigos-Cassino/commits/main')
+            fetch('https://api.github.com/repos/SEU_USUARIO/SEU_REPOSITORIO/commits/main')
                 .then(response => response.json())
                 .then(data => {
                     const commitHash = data.sha.substring(0, 7);
@@ -265,9 +254,16 @@ document.addEventListener('DOMContentLoaded', function() {
         // Finaliza o jogo e recebe o prêmio
         function pararJogo() {
             const ganhoBruto = valorAposta * multiplicadorAtual;
-            const taxa = 0.125;
-            const ganhoLiquido = ganhoBruto * (1 - taxa);
-            finalizarJogoComVitória(ganhoLiquido, "Mines");
+            const taxa = ganhoBruto * 0.125;
+            const ganhoLiquido = ganhoBruto - taxa;
+
+            saldo += ganhoLiquido;
+            updateSaldo();
+
+            registrarTransacao("Mines - Ganho", ganhoLiquido.toFixed(2));
+            registrarTransacao("Taxa de saque (12.5%)", (-taxa).toFixed(2));
+
+            document.getElementById('resultado').textContent = `Você sacou R$ ${ganhoLiquido.toFixed(2)}! 🤑`;
             document.getElementById('pararBtn').disabled = true;
 
             // Mostra todas as bombas
@@ -276,7 +272,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 cell.className = 'cell bomb';
                 cell.textContent = '💣';
             });
-        }
+        }!`;
+
+        document.getElementById('pararBtn').disabled = true;
+
+        // Mostra todas as bombas
+        bombPositions.forEach(pos => {
+            const cell = document.getElementById('mines-grid').children[pos];
+            cell.className = 'cell bomb';
+            cell.textContent = '💣';
+        });
+    }
     </script>
 </body>
 </html>
