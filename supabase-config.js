@@ -38,21 +38,21 @@ async function signUp(email, password, username) {
 }
 
 async function signIn(email, password) {
-  const { data, error } = await supabaseClient.auth.signInWithPassword({
-    email,
-    password
-  });
-  
-  if (error) throw error;
-  
-  // Atualiza último login
-  await supabaseClient
-    .from('users')
-    .update({ last_login: new Date() })
-    .eq('id', data.user.id);
-  
-  return data.user;
-}
+    const { data, error } = await supabaseClient.auth.signInWithEmailAndPassword(
+      email,
+      password
+    );
+    
+    if (error) throw error;
+    
+    // Atualiza último login
+    await supabaseClient
+      .from('users')
+      .update({ last_login: new Date() })
+      .eq('id', data.user.id);
+    
+    return data.user;
+  }
 
 async function signOut() {
   const { error } = await supabaseClient.auth.signOut();
