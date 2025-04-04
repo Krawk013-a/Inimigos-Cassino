@@ -6,7 +6,7 @@
     <title>Mines - Cassino TCC</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
             background-color: #121212;
             color: white;
             text-align: center;
@@ -31,29 +31,42 @@
             cursor: pointer;
             border-radius: 5px;
             transition: all 0.3s;
+            user-select: none;
+        }
+        .cell:hover {
+            background: #444;
         }
         .revealed {
             background: #ffcc00;
             color: black;
             transform: scale(0.95);
+            cursor: default;
         }
         .bomb {
-            background: red;
+            background: #ff4444;
             color: white;
             transform: scale(0.9);
+            cursor: default;
         }
         #controls {
             margin: 20px auto;
             background: #1e1e1e;
-            padding: 15px;
+            padding: 20px;
             border-radius: 10px;
             max-width: 500px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
         input, button {
-            padding: 10px;
-            margin: 5px;
+            padding: 12px;
+            margin: 8px;
             border-radius: 5px;
             border: none;
+            font-size: 16px;
+        }
+        input {
+            background: #2a2a2a;
+            color: white;
+            width: 120px;
         }
         button {
             background: #ffcc00;
@@ -61,30 +74,51 @@
             font-weight: bold;
             cursor: pointer;
             transition: all 0.2s;
+            min-width: 100px;
         }
         button:hover {
             transform: scale(1.05);
+            background: #ffdd33;
         }
         button:disabled {
             opacity: 0.5;
             transform: none !important;
+            background: #cccc00;
+            cursor: not-allowed;
         }
         #info-panel {
             background: #1e1e1e;
             padding: 15px;
             border-radius: 10px;
-            margin: 10px auto;
+            margin: 20px auto;
             max-width: 500px;
             display: flex;
             justify-content: space-around;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
         .info-item {
             margin: 0 10px;
+            font-size: 18px;
         }
         #multiplicador {
             color: #ffcc00;
             font-weight: bold;
             font-size: 1.2em;
+        }
+        #resultado {
+            min-height: 24px;
+            font-size: 18px;
+            margin: 20px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .win-message {
+            background: rgba(0, 200, 0, 0.2);
+            color: #4CAF50;
+        }
+        .lose-message {
+            background: rgba(200, 0, 0, 0.2);
+            color: #f44336;
         }
         footer {
             background-color: #1a1a1a;
@@ -99,27 +133,30 @@
             font-family: monospace;
             margin-top: 5px;
         }
+        .emoji {
+            font-size: 1.2em;
+        }
     </style>
 </head>
 <body>
     
-    <h1>🪙 Mines</h1>
+    <h1>🪙 Mines <span class="emoji">💎</span></h1>
 
     <div id="controls">
-        <input type="number" id="valorAposta" placeholder="Valor (R$)" min="1">
+        <input type="number" id="valorAposta" placeholder="Valor (R$)" min="1" step="0.01">
         <input type="number" id="numBombas" placeholder="Nº de bombas (1-5)" min="1" max="5" value="1">
         <button onclick="iniciarJogo()">Jogar</button>
         <button id="pararBtn" onclick="pararJogo()" disabled>Sacar</button>
     </div>
     
     <div id="info-panel">
-        <div class="info-item">Saldo: R$ <span id="saldo-value">0</span></div>
+        <div class="info-item">Saldo: R$ <span id="saldo-value">0.00</span></div>
         <div class="info-item">Multiplicador: <span id="multiplicador">1.00x</span></div>
-        <div class="info-item">Ganho potencial: R$ <span id="ganho">0</span></div>
+        <div class="info-item">Ganho potencial: R$ <span id="ganho">0.00</span></div>
     </div>
     
     <div id="mines-grid"></div>
-    <p id="resultado" style="min-height: 24px;"></p>
+    <p id="resultado"></p>
 
     <footer>
         <p>Este site é um simulador educacional (TCC). Não utilize valores reais.</p>
@@ -127,17 +164,28 @@
     </footer>
 
     <script>
+        // Variáveis globais
         let bombPositions = [];
-        let saldo = Number(localStorage.getItem('saldo')) || 0;
+        let saldo = parseFloat(localStorage.getItem('saldo')) || 100.00; // Saldo inicial de R$100,00
         let valorAposta = 0;
         let celulasReveladas = [];
         let multiplicadorAtual = 1;
         let multiplicadorBase = 1;
         let incrementoMultiplicador = 0;
         let jogoAtivo = false;
+        let celulasSegurasReveladas = 0;
 
+        // Inicialização do jogo
         document.addEventListener('DOMContentLoaded', function() {
             updateSaldo();
+            carregarVersao();
+            
+            // Configurar validação dos inputs
+            document.getElementById('valorAposta').addEventListener('change', validarAposta);
+            document.getElementById('numBombas').addEventListener('change', validarNumBombas);
+        });
+
+        function carregarVersao() {
             fetch('https://api.github.com/repos/Krawk013-a/Inimigos-Cassino/commits/main')
                 .then(response => response.json())
                 .then(data => {
@@ -149,7 +197,20 @@
                 .catch(() => {
                     document.getElementById('commit-version').textContent = 'Versão: offline';
                 });
-        });
+        }
+
+        function validarAposta() {
+            const input = document.getElementById('valorAposta');
+            if (input.value < 0.01) input.value = 0.01;
+            if (input.value > 10000) input.value = 10000;
+            input.value = parseFloat(input.value).toFixed(2);
+        }
+
+        function validarNumBombas() {
+            const input = document.getElementById('numBombas');
+            if (input.value < 1) input.value = 1;
+            if (input.value > 5) input.value = 5;
+        }
 
         function updateSaldo() {
             document.getElementById('saldo-value').textContent = saldo.toFixed(2);
@@ -157,24 +218,38 @@
         }
 
         function iniciarJogo() {
-            valorAposta = Number(document.getElementById('valorAposta').value);
+            // Resetar estado do jogo
+            jogoAtivo = false;
+            bombPositions = [];
+            celulasReveladas = [];
+            celulasSegurasReveladas = 0;
+            
+            // Obter valores dos inputs
+            valorAposta = parseFloat(document.getElementById('valorAposta').value);
             const numBombas = parseInt(document.getElementById('numBombas').value);
 
-            if (valorAposta < 1 || isNaN(valorAposta)) {
-                alert('Por favor, insira um valor válido para a aposta!');
+            // Validações
+            if (isNaN(valorAposta) {
+                mostrarResultado('Por favor, insira um valor válido para a aposta!', 'error');
+                return;
+            }
+
+            if (valorAposta < 0.01) {
+                mostrarResultado('O valor mínimo da aposta é R$ 0.01!', 'error');
                 return;
             }
 
             if (valorAposta > saldo) {
-                alert('Saldo insuficiente para esta aposta!');
+                mostrarResultado('Saldo insuficiente para esta aposta!', 'error');
                 return;
             }
 
             if (numBombas < 1 || numBombas > 5) {
-                alert('Por favor, selecione entre 1 e 5 bombas!');
+                mostrarResultado('Por favor, selecione entre 1 e 5 bombas!', 'error');
                 return;
             }
 
+            // Configurar multiplicadores baseado no número de bombas
             const multiplicadores = {
                 1: [1.1, 0.2],
                 2: [1.2, 0.3],
@@ -186,18 +261,21 @@
             [multiplicadorBase, incrementoMultiplicador] = multiplicadores[numBombas];
             multiplicadorAtual = multiplicadorBase;
             
+            // Atualizar interface
             document.getElementById('multiplicador').textContent = multiplicadorAtual.toFixed(2) + 'x';
             document.getElementById('ganho').textContent = (valorAposta * multiplicadorAtual).toFixed(2);
 
+            // Deduzir aposta do saldo
             saldo -= valorAposta;
             updateSaldo();
 
-            bombPositions = [];
+            // Gerar posições aleatórias das bombas
             while (bombPositions.length < numBombas) {
                 const pos = Math.floor(Math.random() * 25);
                 if (!bombPositions.includes(pos)) bombPositions.push(pos);
             }
 
+            // Criar grid
             const grid = document.getElementById('mines-grid');
             grid.innerHTML = '';
             celulasReveladas = Array(25).fill(false);
@@ -205,30 +283,39 @@
             for (let i = 0; i < 25; i++) {
                 const cell = document.createElement('div');
                 cell.className = 'cell';
+                cell.dataset.position = i;
                 cell.onclick = () => revelarCelula(i, cell);
                 grid.appendChild(cell);
             }
 
-            document.getElementById('resultado').textContent = '';
+            // Resetar mensagens e habilitar botão de saque
+            mostrarResultado('', '');
             document.getElementById('pararBtn').disabled = false;
             jogoAtivo = true;
         }
 
         function revelarCelula(pos, cell) {
+            // Verificar se o jogo está ativo e se a célula não foi revelada
             if (!jogoAtivo || celulasReveladas[pos]) return;
 
+            // Marcar célula como revelada
             celulasReveladas[pos] = true;
-            
+
             if (bombPositions.includes(pos)) {
+                // Célula é uma bomba - jogador perde
                 cell.className = 'cell bomb';
                 cell.textContent = '💣';
-                document.getElementById('resultado').textContent = 'Você perdeu! 💥';
+                mostrarResultado('Você perdeu! 💥', 'lose');
                 document.getElementById('pararBtn').disabled = true;
                 mostrarBombas();
                 jogoAtivo = false;
             } else {
+                // Célula segura - continuar jogo
                 cell.className = 'cell revealed';
                 cell.textContent = multiplicadorAtual.toFixed(1) + 'x';
+                celulasSegurasReveladas++;
+                
+                // Atualizar multiplicador
                 multiplicadorAtual += incrementoMultiplicador;
                 document.getElementById('multiplicador').textContent = multiplicadorAtual.toFixed(2) + 'x';
                 document.getElementById('ganho').textContent = (valorAposta * multiplicadorAtual).toFixed(2);
@@ -238,11 +325,14 @@
         function pararJogo() {
             if (!jogoAtivo) return;
             
+            // Calcular ganhos
             const ganhoBruto = valorAposta * multiplicadorAtual;
             const ganhoLiquido = ganhoBruto * 0.875; // 12.5% de taxa
             saldo += ganhoLiquido;
             updateSaldo();
-            document.getElementById('resultado').textContent = `Você sacou R$ ${ganhoLiquido.toFixed(2)}! 🤑`;
+            
+            // Mostrar resultado
+            mostrarResultado(`Você sacou R$ ${ganhoLiquido.toFixed(2)}! 🤑`, 'win');
             document.getElementById('pararBtn').disabled = true;
             mostrarBombas();
             jogoAtivo = false;
@@ -254,8 +344,23 @@
                 if (!celulasReveladas[pos]) {
                     cell.className = 'cell bomb';
                     cell.textContent = '💣';
+                    celulasReveladas[pos] = true;
                 }
             });
+        }
+
+        function mostrarResultado(mensagem, tipo) {
+            const elemento = document.getElementById('resultado');
+            elemento.textContent = mensagem;
+            elemento.className = '';
+            
+            if (tipo === 'win') {
+                elemento.classList.add('win-message');
+            } else if (tipo === 'lose') {
+                elemento.classList.add('lose-message');
+            } else if (tipo === 'error') {
+                elemento.style.color = '#ff9800';
+            }
         }
     </script>
 </body>
