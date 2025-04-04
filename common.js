@@ -10,35 +10,28 @@ function registrarTransacao(descricao, valorBruto, isGanho = false) {
     let valorLiquido = valorBruto;
     let taxa = 0;
     
+    // Obtém o saldo atual e garante que é um número
+    let saldoAtual = parseFloat(localStorage.getItem('saldo')) || 0;
+
     // Aplica taxa sobre ganhos
     if (isGanho && valorBruto > 0) {
-        taxa = valorBruto * TAXA_APOSTAS;
-        valorLiquido = valorBruto - taxa;
-        
+        taxa = parseFloat((valorBruto * TAXA_APOSTAS).toFixed(2));
+        valorLiquido = parseFloat((valorBruto - taxa).toFixed(2));
+
         // Registra a taxa como transação separada
-        registrarTransacao(`Taxa sobre ${descricao.toLowerCase()}`, -taxa);
+        adicionarAoExtrato(`Taxa sobre ${descricao.toLowerCase()}`, -taxa, saldoAtual);
     }
-    
+
     // Atualiza saldo
-    const saldoAtual = Number(localStorage.getItem('saldo')) || 0;
-    const novoSaldo = saldoAtual + valorLiquido;
-    localStorage.setItem('saldo', novoSaldo);
-    
+    let novoSaldo = parseFloat((saldoAtual + valorLiquido).toFixed(2));
+    localStorage.setItem('saldo', novoSaldo.toString());
+
     // Adiciona ao extrato
-    const extrato = JSON.parse(localStorage.getItem('extrato')) || [];
-    extrato.push({
-        data: new Date().toISOString(),
-        descricao: descricao,
-        valor: valorLiquido,
-        taxa: isGanho ? taxa : null,
-        saldo: novoSaldo
-    });
-    
-    localStorage.setItem('extrato', JSON.stringify(extrato));
-    
+    adicionarAoExtrato(descricao, valorLiquido, novoSaldo);
+
     // Atualiza a tela
     updateSaldo();
-    
+
     return {
         liquido: valorLiquido,
         taxa: taxa
@@ -46,10 +39,29 @@ function registrarTransacao(descricao, valorBruto, isGanho = false) {
 }
 
 /**
+ * Adiciona uma entrada ao extrato de transações
+ * @param {string} descricao - Descrição da transação
+ * @param {number} valor - Valor da transação
+ * @param {number} saldoAtualizado - Saldo após a transação
+ */
+function adicionarAoExtrato(descricao, valor, saldoAtualizado) {
+    const extrato = JSON.parse(localStorage.getItem('extrato')) || [];
+    
+    extrato.push({
+        data: new Date().toLocaleString('pt-BR'),
+        descricao: descricao,
+        valor: valor,
+        saldo: saldoAtualizado
+    });
+
+    localStorage.setItem('extrato', JSON.stringify(extrato));
+}
+
+/**
  * Atualiza o display de saldo na página
  */
 function updateSaldo() {
-    const saldo = Number(localStorage.getItem('saldo')) || 0;
+    let saldo = parseFloat(localStorage.getItem('saldo')) || 0;
     const saldoDisplay = document.getElementById('saldo-value');
 
     if (saldoDisplay) {
