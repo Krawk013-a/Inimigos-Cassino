@@ -50,13 +50,15 @@ function registrarTransacao(descricao, valorBruto, isGanho = false) {
  */
 function updateSaldo() {
     const saldo = Number(localStorage.getItem('saldo')) || 0;
-    const saldoDisplay = document.getElementById('saldo-display') || document.getElementById('saldo-value');
-    
+    const saldoDisplay = document.getElementById('saldo-value');
+
     if (saldoDisplay) {
         saldoDisplay.textContent = saldo.toLocaleString('pt-BR', {
             style: 'currency',
             currency: 'BRL'
         });
+    } else {
+        console.warn("Elemento saldo-value não encontrado! Verifique se o ID está correto no HTML.");
     }
 }
 
@@ -85,3 +87,6 @@ function finalizarJogoComVitória(ganhoBruto, nomeJogo) {
     
     updateSaldo();
 }
+
+// Garante que updateSaldo() só será executado após o carregamento da página
+document.addEventListener('DOMContentLoaded', updateSaldo);
