@@ -112,19 +112,18 @@
             height: 300px;
             border-radius: 50%;
             background: conic-gradient(
-                var(--cor-vermelho) 0deg 15deg,
-                var(--cor-preto) 15deg 45deg,
-                var(--cor-vermelho) 45deg 60deg,
-                var(--cor-preto) 60deg 90deg,
-                var(--cor-vermelho) 90deg 120deg,
-                var(--cor-preto) 120deg 150deg,
-                var(--cor-vermelho) 150deg 180deg,
-                var(--cor-preto) 180deg 210deg,
-                var(--cor-vermelho) 210deg 240deg,
-                var(--cor-preto) 240deg 270deg,
-                var(--cor-vermelho) 270deg 300deg,
-                var(--cor-preto) 300deg 330deg,
-                var(--cor-vermelho) 330deg 360deg
+                var(--cor-vermelho) 0deg 30deg,
+                var(--cor-preto) 30deg 60deg,
+                var(--cor-vermelho) 60deg 90deg,
+                var(--cor-preto) 90deg 120deg,
+                var(--cor-vermelho) 120deg 150deg,
+                var(--cor-preto) 150deg 180deg,
+                var(--cor-vermelho) 180deg 210deg,
+                var(--cor-preto) 210deg 240deg,
+                var(--cor-vermelho) 240deg 270deg,
+                var(--cor-preto) 270deg 300deg,
+                var(--cor-vermelho) 300deg 330deg,
+                var(--cor-preto) 330deg 360deg
             );
             position: absolute;
             top: 0;
@@ -211,27 +210,12 @@
         <div id="roleta"></div>
         <div class="base"></div>
     </div>
-    
-    <div id="info-panel">
-        <div class="info-item">Saldo: <span class="info-value" id="saldo-value">0</span></div>
-        <div class="info-item">Aposta: <span class="info-value" id="aposta-value">0</span></div>
-    </div>
-    
+
     <p id="resultado"></p>
 
-    <script src="common.js"></script>
     <script>
-        let saldo = Number(localStorage.getItem('saldo')) || 0;
         let corAposta = 'vermelho';
-        let valorAposta = 0;
-        let podeGirar = true;
 
-        // Atualiza o saldo na tela
-        function updateSaldo() {
-            document.getElementById('saldo-value').textContent = saldo.toFixed(2);
-        }
-
-        // Seleciona a cor da aposta
         function selecionarCor(cor) {
             corAposta = cor;
             document.querySelectorAll('.aposta-option').forEach(el => {
@@ -240,60 +224,23 @@
             document.querySelector(`.${cor}`).classList.add('selecionado');
         }
 
-        // Gira a roleta
         function girarRoleta() {
-            valorAposta = Number(document.getElementById('valorAposta').value);
-            
-            if (!podeGirar) return;
-            if (valorAposta < 1 || valorAposta > saldo) {
-                alert('Aposta inválida ou saldo insuficiente!');
-                return;
-            }
-
-            podeGirar = false;
-            document.getElementById('resultado').textContent = '';
-            document.getElementById('aposta-value').textContent = valorAposta.toFixed(2);
-            
-            // Deduz a aposta
-            registrarTransacao("Aposta na Roleta", -valorAposta);
-            
             const roleta = document.getElementById('roleta');
             const resultado = document.getElementById('resultado');
-            const giro = Math.floor(Math.random() * 3600) + 720; // 2-10 voltas
+            const giro = Math.floor(Math.random() * 3600) + 720;
             const anguloFinal = giro % 360;
 
             roleta.style.transition = 'transform 3s ease-out';
             roleta.style.transform = `translateX(-50%) rotate(${giro}deg)`;
 
             setTimeout(() => {
-                podeGirar = true;
-                let corSorteada;
-                
-                // Determina a cor sorteada
-                if ((anguloFinal >= 0 && anguloFinal < 15) || 
-                    (anguloFinal >= 45 && anguloFinal < 60) || 
-                    (anguloFinal >= 90 && anguloFinal < 120) || 
-                    (anguloFinal >= 150 && anguloFinal < 180) || 
-                    (anguloFinal >= 210 && anguloFinal < 240) || 
-                    (anguloFinal >= 270 && anguloFinal < 300) || 
-                    (anguloFinal >= 330 && anguloFinal < 360)) {
-                    corSorteada = 'vermelho';
-                } else {
-                    corSorteada = 'preto';
-                }
+                const setoresVermelhos = [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330];
+                let corSorteada = setoresVermelhos.some(setor => anguloFinal >= setor && anguloFinal < setor + 30) ? 'vermelho' : 'preto';
 
-                if (corAposta === corSorteada) {
-                    const ganhoBruto = valorAposta * 2;
-                    finalizarJogoComVitória(ganhoBruto, "Roleta");
-                } else {
-                    resultado.textContent = `💸 ${corSorteada.toUpperCase()}! Você perdeu R$${valorAposta.toFixed(2)}.`;
-                    resultado.className = 'perda';
-                }
+                resultado.textContent = corSorteada === corAposta ? "✅ Você ganhou!" : "❌ Você perdeu!";
+                resultado.className = corSorteada === corAposta ? 'ganho' : 'perda';
             }, 3000);
         }
-
-        // Carrega os dados ao iniciar
-        document.addEventListener('DOMContentLoaded', updateSaldo);
     </script>
 </body>
 </html>
