@@ -9,8 +9,10 @@
     let jogoAtivo = false;
     let celulasClicadas = new Set();
 
-    document.addEventListener('DOMContentLoaded', function () {
-        updateSaldo();
+    document.addEventListener('DOMContentLoaded', function() {
+    updateSaldo(); // Garante que o saldo só é atualizado depois do DOM carregar
+});
+
     });
 
     function updateSaldo() {
