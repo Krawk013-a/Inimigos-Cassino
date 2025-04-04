@@ -163,8 +163,8 @@
     
     <div id="controls">
         <input type="number" id="valorAposta" placeholder="Valor (R$)" min="1" step="0.01">
-        <button onclick="iniciarJogo()">Jogar</button>
-        <button id="pararBtn" onclick="pararJogo()" disabled>Sacar</button>
+        <button id="btnJogar">Jogar</button>
+        <button id="pararBtn" disabled>Sacar</button>
     </div>
     
     <div id="game-container">
@@ -192,10 +192,20 @@
         let chanceExplosao = 0.001;
         let fumacaInterval;
 
+        // Elementos DOM
+        const btnJogar = document.getElementById('btnJogar');
+        const btnParar = document.getElementById('pararBtn');
+        const inputAposta = document.getElementById('valorAposta');
+
         // Inicialização
         document.addEventListener('DOMContentLoaded', function() {
             gameContainer = document.getElementById('game-container');
             updateSaldo();
+            
+            // Configura eventos
+            btnJogar.addEventListener('click', iniciarJogo);
+            btnParar.addEventListener('click', pararJogo);
+            inputAposta.addEventListener('input', validarAposta);
         });
 
         // Atualiza o saldo na tela
@@ -208,6 +218,12 @@
         function updateGameInfo() {
             document.getElementById('multiplicador-display').textContent = multiplicadorAtual.toFixed(2) + 'x';
             document.getElementById('ganho-value').textContent = (valorAposta * multiplicadorAtual).toFixed(2);
+        }
+
+        // Valida o valor da aposta
+        function validarAposta() {
+            const valor = parseFloat(inputAposta.value);
+            btnJogar.disabled = !(valor && valor > 0 && valor <= saldo);
         }
 
         // Cria efeito de fumaça
@@ -265,9 +281,9 @@
 
         // Inicia um novo jogo
         function iniciarJogo() {
-            valorAposta = parseFloat(document.getElementById('valorAposta').value);
+            valorAposta = parseFloat(inputAposta.value);
             
-            if (isNaN(valorAposta) {
+            if (isNaN(valorAposta)) {
                 alert('Por favor, insira um valor válido para a aposta!');
                 return;
             }
@@ -286,7 +302,7 @@
             clearInterval(fogueteInterval);
             clearInterval(fumacaInterval);
             document.getElementById('resultado').textContent = '';
-            document.getElementById('pararBtn').disabled = false;
+            btnParar.disabled = false;
             document.getElementById('foguete').style.transform = 'translateX(-50%) translateY(0)';
             document.getElementById('foguete').textContent = '🚀';
             
@@ -324,7 +340,7 @@
                     criarExplosao();
                     document.getElementById('foguete').textContent = '💥';
                     document.getElementById('resultado').textContent = `💥 Foguete explodiu em ${multiplicadorAtual.toFixed(2)}x!`;
-                    document.getElementById('pararBtn').disabled = true;
+                    btnParar.disabled = true;
                 }
                 
                 updateGameInfo();
@@ -338,7 +354,7 @@
             
             const ganhoBruto = valorAposta * multiplicadorAtual;
             finalizarJogoComVitoria(ganhoBruto, "Foguete");
-            document.getElementById('pararBtn').disabled = true;
+            btnParar.disabled = true;
         }
 
         // Funções de transação
@@ -347,7 +363,7 @@
             let valorLiquido = valorBruto;
             let taxa = 0;
             
-            // Obtém o saldo atual e garante que é um número
+            // Obtém o saldo atual
             let saldoAtual = parseFloat(localStorage.getItem('saldo')) || 0;
         
             // Aplica taxa sobre ganhos
@@ -378,19 +394,10 @@
         
             // Atualiza a tela
             updateSaldo();
-        
-            return {
-                liquido: valorLiquido,
-                taxa: taxa
-            };
         }
         
         function finalizarJogoComVitoria(ganhoBruto, nomeJogo) {
             const resultado = registrarTransacao(`Ganho no ${nomeJogo}`, ganhoBruto, true);
-            
-            const mensagem = `🎉 Você ganhou R$${ganhoBruto.toFixed(2)}!\n` +
-                             `(Taxa de 12.5%: -R$${resultado.taxa.toFixed(2)})\n` +
-                             `Valor creditado: R$${resultado.liquido.toFixed(2)}`;
             
             // Atualiza a mensagem de resultado
             const resultadoElement = document.getElementById('resultado');
@@ -400,19 +407,7 @@
                     `<small>Taxa de 12.5%: R$${resultado.taxa.toFixed(2)}</small>`;
                 resultadoElement.className = 'ganho';
             }
-            
-            updateSaldo();
         }
-
-        // Atualiza o botão de aposta quando o valor é alterado
-        document.getElementById('valorAposta').addEventListener('input', function() {
-            const valor = parseFloat(this.value);
-            if (valor && valor > 0) {
-                document.getElementById('btn-apostar').disabled = false;
-            } else {
-                document.getElementById('btn-apostar').disabled = true;
-            }
-        });
     </script>
 </body>
 </html>
