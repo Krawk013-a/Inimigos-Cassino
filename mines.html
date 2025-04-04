@@ -1,111 +1,236 @@
-<script>
-    let bombPositions = [];
-    let saldo = Number(localStorage.getItem('saldo')) || 0;
-    let valorAposta = 0;
-    let celulasReveladas = 0;
-    let multiplicadorAtual = 1;
-    let multiplicadorBase = 1;
-    let incrementoMultiplicador = 0;
-    let jogoAtivo = false;
-    let celulasClicadas = new Set();
-
-    document.addEventListener('DOMContentLoaded', function() {
-    updateSaldo(); // Garante que o saldo só é atualizado depois do DOM carregar
-});
-
-    });
-
-    function updateSaldo() {
-        document.getElementById('saldo-value').textContent = saldo.toFixed(2);
-        localStorage.setItem('saldo', saldo);
-    }
-
-    function iniciarJogo() {
-        valorAposta = Number(document.getElementById('valorAposta').value);
-        const numBombas = parseInt(document.getElementById('numBombas').value);
-
-        if (valorAposta < 1 || valorAposta > saldo) {
-            alert('Aposta inválida ou saldo insuficiente!');
-            return;
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mines - Cassino TCC</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
         }
-
-        const multiplicadores = {
-            1: [1.1, 0.2],
-            2: [1.2, 0.3],
-            3: [1.3, 0.4],
-            4: [1.4, 0.55],
-            5: [1.5, 0.65]
-        };
-
-        [multiplicadorBase, incrementoMultiplicador] = multiplicadores[numBombas];
-
-        multiplicadorAtual = multiplicadorBase;
-        saldo -= valorAposta;
-        updateSaldo();
-
-        bombPositions = [];
-        while (bombPositions.length < numBombas) {
-            const pos = Math.floor(Math.random() * 25);
-            if (!bombPositions.includes(pos)) bombPositions.push(pos);
+        #mines-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 60px);
+            gap: 10px;
+            margin: 20px auto;
+            justify-content: center;
         }
-
-        const grid = document.getElementById('mines-grid');
-        grid.innerHTML = '';
-        celulasReveladas = 0;
-        celulasClicadas.clear();
-        jogoAtivo = true;
-
-        for (let i = 0; i < 25; i++) {
-            const cell = document.createElement('div');
-            cell.className = 'cell';
-            cell.dataset.index = i;
-            cell.onclick = () => revelarCelula(i, cell);
-            grid.appendChild(cell);
+        .cell {
+            width: 60px;
+            height: 60px;
+            background: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: all 0.3s;
         }
-
-        document.getElementById('resultado').textContent = '';
-        document.getElementById('pararBtn').disabled = false;
-    }
-
-    function revelarCelula(pos, cell) {
-        if (!jogoAtivo || celulasClicadas.has(pos)) return;
-
-        celulasClicadas.add(pos);
-
-        if (bombPositions.includes(pos)) {
-            cell.className = 'cell bomb';
-            cell.textContent = '💣';
-            document.getElementById('resultado').textContent = 'Você perdeu! 💥';
-            document.getElementById('pararBtn').disabled = true;
-            jogoAtivo = false;
-            mostrarBombas();
-        } else {
-            cell.className = 'cell revealed';
-            cell.textContent = multiplicadorAtual.toFixed(1) + 'x';
-            celulasReveladas++;
-            multiplicadorAtual += incrementoMultiplicador;
-            document.getElementById('multiplicador').textContent = multiplicadorAtual.toFixed(2) + 'x';
+        .revealed {
+            background: #ffcc00;
+            color: black;
+            transform: scale(0.95);
         }
-    }
+        .bomb {
+            background: red;
+            color: white;
+            transform: scale(0.9);
+        }
+        #controls {
+            margin: 20px auto;
+            background: #1e1e1e;
+            padding: 15px;
+            border-radius: 10px;
+            max-width: 500px;
+        }
+        input, button {
+            padding: 10px;
+            margin: 5px;
+            border-radius: 5px;
+            border: none;
+        }
+        button {
+            background: #ffcc00;
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        button:hover {
+            transform: scale(1.05);
+        }
+        button:disabled {
+            opacity: 0.5;
+            transform: none !important;
+        }
+        #info-panel {
+            background: #1e1e1e;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px auto;
+            max-width: 500px;
+            display: flex;
+            justify-content: space-around;
+        }
+        .info-item {
+            margin: 0 10px;
+        }
+        #multiplicador {
+            color: #ffcc00;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        footer {
+            background-color: #1a1a1a;
+            color: #999;
+            text-align: center;
+            padding: 15px;
+            margin-top: 30px;
+            font-size: 12px;
+            border-top: 1px solid #333;
+        }
+        #commit-version {
+            font-family: monospace;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    
+    <h1>🪙 Mines</h1>
 
-    function pararJogo() {
-        if (!jogoAtivo) return;
+    <div id="controls">
+        <input type="number" id="valorAposta" placeholder="Valor (R$)" min="1">
+        <input type="number" id="numBombas" placeholder="Nº de bombas (1-5)" min="1" max="5" value="1">
+        <button onclick="iniciarJogo()">Jogar</button>
+        <button id="pararBtn" onclick="pararJogo()" disabled>Sacar</button>
+    </div>
+    
+    <div id="info-panel">
+        <div class="info-item">Saldo: R$ <span id="saldo-value">0</span></div>
+        <div class="info-item">Multiplicador: <span id="multiplicador">1.00x</span></div>
+        <div class="info-item">Ganho potencial: R$ <span id="ganho">0</span></div>
+    </div>
+    
+    <div id="mines-grid"></div>
+    <p id="resultado" style="min-height: 24px;"></p>
 
-        const ganhoLiquido = (valorAposta * multiplicadorAtual) * 0.875;
-        saldo += ganhoLiquido;
-        updateSaldo();
+    <footer>
+        <p>Este site é um simulador educacional (TCC). Não utilize valores reais.</p>
+        <p id="commit-version">Versão: carregando...</p>
+    </footer>
 
-        document.getElementById('resultado').textContent = `Você sacou R$ ${ganhoLiquido.toFixed(2)}! 🤑`;
-        document.getElementById('pararBtn').disabled = true;
-        jogoAtivo = false;
-        mostrarBombas();
-    }
+    <script>
+        let bombPositions = [];
+        let saldo = Number(localStorage.getItem('saldo')) || 0;
+        let valorAposta = 0;
+        let celulasReveladas = 0;
+        let multiplicadorAtual = 1;
+        let multiplicadorBase = 1;
+        let incrementoMultiplicador = 0;
 
-    function mostrarBombas() {
-        bombPositions.forEach(pos => {
-            const cell = document.getElementById('mines-grid').children[pos];
-            cell.className = 'cell bomb';
-            cell.textContent = '💣';
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSaldo();
+            fetch('https://api.github.com/repos/Krawk013-a/Inimigos-Cassino/commits/main')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.length > 0) {
+                        const commitHash = data[0].sha.substring(0, 7);
+                        document.getElementById('commit-version').textContent = `Versão: ${commitHash}`;
+                    }
+                })
+                .catch(() => {
+                    document.getElementById('commit-version').textContent = 'Versão: offline';
+                });
         });
-    }
-</script>
+
+        function updateSaldo() {
+            document.getElementById('saldo-value').textContent = saldo.toFixed(2);
+            localStorage.setItem('saldo', saldo);
+        }
+
+        function iniciarJogo() {
+            valorAposta = Number(document.getElementById('valorAposta').value);
+            const numBombas = parseInt(document.getElementById('numBombas').value);
+
+            if (valorAposta < 1 || valorAposta > saldo) {
+                alert('Aposta inválida ou saldo insuficiente!');
+                return;
+            }
+
+            const multiplicadores = {
+                1: [1.1, 0.2],
+                2: [1.2, 0.3],
+                3: [1.3, 0.4],
+                4: [1.4, 0.55],
+                5: [1.5, 0.65]
+            };
+            
+            [multiplicadorBase, incrementoMultiplicador] = multiplicadores[numBombas];
+
+            multiplicadorAtual = multiplicadorBase;
+            updateSaldo();
+
+            saldo -= valorAposta;
+            updateSaldo();
+
+            bombPositions = [];
+            while (bombPositions.length < numBombas) {
+                const pos = Math.floor(Math.random() * 25);
+                if (!bombPositions.includes(pos)) bombPositions.push(pos);
+            }
+
+            const grid = document.getElementById('mines-grid');
+            grid.innerHTML = '';
+            celulasReveladas = 0;
+            for (let i = 0; i < 25; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.onclick = () => revelarCelula(i, cell);
+                grid.appendChild(cell);
+            }
+
+            document.getElementById('resultado').textContent = '';
+            document.getElementById('pararBtn').disabled = false;
+        }
+
+        function revelarCelula(pos, cell) {
+            if (bombPositions.includes(pos)) {
+                cell.className = 'cell bomb';
+                cell.textContent = '💣';
+                document.getElementById('resultado').textContent = 'Você perdeu! 💥';
+                document.getElementById('pararBtn').disabled = true;
+                mostrarBombas();
+            } else {
+                cell.className = 'cell revealed';
+                cell.textContent = multiplicadorAtual.toFixed(1) + 'x';
+                celulasReveladas++;
+                multiplicadorAtual += incrementoMultiplicador;
+            }
+        }
+
+        function pararJogo() {
+            const ganhoLiquido = (valorAposta * multiplicadorAtual) * 0.875;
+            saldo += ganhoLiquido;
+            updateSaldo();
+            document.getElementById('resultado').textContent = `Você sacou R$ ${ganhoLiquido.toFixed(2)}! 🤑`;
+            document.getElementById('pararBtn').disabled = true;
+            mostrarBombas();
+        }
+
+        function mostrarBombas() {
+            bombPositions.forEach(pos => {
+                const cell = document.getElementById('mines-grid').children[pos];
+                cell.className = 'cell bomb';
+                cell.textContent = '💣';
+            });
+        }
+    </script>
+</body>
+</html>
