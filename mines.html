@@ -105,8 +105,6 @@
     
     <h1>🪙 Mines</h1>
 
-    <script src="common.js"></script>
-    
     <div id="controls">
         <input type="number" id="valorAposta" placeholder="Valor (R$)" min="1">
         <input type="number" id="numBombas" placeholder="Nº de bombas (1-5)" min="1" max="5" value="1">
@@ -129,7 +127,6 @@
     </footer>
 
     <script>
-        // Variáveis do jogo
         let bombPositions = [];
         let saldo = Number(localStorage.getItem('saldo')) || 0;
         let valorAposta = 0;
@@ -138,73 +135,57 @@
         let multiplicadorBase = 1;
         let incrementoMultiplicador = 0;
 
-        // Carrega o saldo ao iniciar
         document.addEventListener('DOMContentLoaded', function() {
             updateSaldo();
-            // Busca a versão do GitHub
             fetch('https://api.github.com/repos/Krawk013-a/Inimigos-Cassino/commits/main')
                 .then(response => response.json())
                 .then(data => {
-                    const commitHash = data.sha.substring(0, 7);
-                    document.getElementById('commit-version').textContent = `Versão: ${commitHash}`;
+                    if (data.length > 0) {
+                        const commitHash = data[0].sha.substring(0, 7);
+                        document.getElementById('commit-version').textContent = `Versão: ${commitHash}`;
+                    }
                 })
                 .catch(() => {
                     document.getElementById('commit-version').textContent = 'Versão: offline';
                 });
         });
 
-        // Atualiza o saldo na tela e no localStorage
         function updateSaldo() {
-            document.getElementById('saldo-value').textContent = saldo;
+            document.getElementById('saldo-value').textContent = saldo.toFixed(2);
             localStorage.setItem('saldo', saldo);
         }
 
-        // Atualiza o multiplicador na tela
-        function updateMultiplicador() {
-            document.getElementById('multiplicador').textContent = multiplicadorAtual.toFixed(2) + 'x';
-            updateGanhoPotencial();
-        }
-
-        // Atualiza o ganho potencial
-        function updateGanhoPotencial() {
-            const ganho = valorAposta * multiplicadorAtual;
-            document.getElementById('ganho').textContent = ganho.toFixed(2);
-        }
-
-        // Inicia um novo jogo
         function iniciarJogo() {
             valorAposta = Number(document.getElementById('valorAposta').value);
             const numBombas = parseInt(document.getElementById('numBombas').value);
-            
+
             if (valorAposta < 1 || valorAposta > saldo) {
                 alert('Aposta inválida ou saldo insuficiente!');
                 return;
             }
 
-            // Configura o multiplicador baseado no número de bombas
-            switch(numBombas) {
-                case 1: multiplicadorBase = 1.1; incrementoMultiplicador = 0.1; break;
-                case 2: multiplicadorBase = 1.2; incrementoMultiplicador = 0.15; break;
-                case 3: multiplicadorBase = 1.3; incrementoMultiplicador = 0.2; break;
-                case 4: multiplicadorBase = 1.4; incrementoMultiplicador = 0.25; break;
-                case 5: multiplicadorBase = 1.5; incrementoMultiplicador = 0.3; break;
-            }
+            const multiplicadores = {
+                1: [1.1, 0.1],
+                2: [1.2, 0.15],
+                3: [1.3, 0.2],
+                4: [1.4, 0.25],
+                5: [1.5, 0.3]
+            };
             
-            multiplicadorAtual = multiplicadorBase;
-            updateMultiplicador();
+            [multiplicadorBase, incrementoMultiplicador] = multiplicadores[numBombas];
 
-            // Deduz a aposta do saldo
+            multiplicadorAtual = multiplicadorBase;
+            updateSaldo();
+
             saldo -= valorAposta;
             updateSaldo();
-            
-            // Gera as posições das bombas
+
             bombPositions = [];
             while (bombPositions.length < numBombas) {
                 const pos = Math.floor(Math.random() * 25);
                 if (!bombPositions.includes(pos)) bombPositions.push(pos);
             }
 
-            // Cria a grade do jogo
             const grid = document.getElementById('mines-grid');
             grid.innerHTML = '';
             celulasReveladas = 0;
@@ -219,70 +200,37 @@
             document.getElementById('pararBtn').disabled = false;
         }
 
-        // Revela uma célula quando clicada
         function revelarCelula(pos, cell) {
             if (bombPositions.includes(pos)) {
-                // Clicou em uma bomba - fim de jogo
                 cell.className = 'cell bomb';
                 cell.textContent = '💣';
                 document.getElementById('resultado').textContent = 'Você perdeu! 💥';
                 document.getElementById('pararBtn').disabled = true;
-                
-                // Mostra todas as bombas
-                bombPositions.forEach(bombPos => {
-                    const bombCell = document.getElementById('mines-grid').children[bombPos];
-                    if (bombCell !== cell) {
-                        bombCell.className = 'cell bomb';
-                        bombCell.textContent = '💣';
-                    }
-                });
+                mostrarBombas();
             } else {
-                // Célula segura - aumenta multiplicador
                 cell.className = 'cell revealed';
                 cell.textContent = multiplicadorAtual.toFixed(1) + 'x';
                 celulasReveladas++;
-                
-                // Aumenta o multiplicador
                 multiplicadorAtual += incrementoMultiplicador;
-                updateMultiplicador();
-                
-                // Atualiza o resultado
-                document.getElementById('resultado').textContent = `Continue! Multiplicador: ${multiplicadorAtual.toFixed(2)}x`;
             }
         }
 
-        // Finaliza o jogo e recebe o prêmio
         function pararJogo() {
-            const ganhoBruto = valorAposta * multiplicadorAtual;
-            const taxa = ganhoBruto * 0.125;
-            const ganhoLiquido = ganhoBruto - taxa;
-
+            const ganhoLiquido = (valorAposta * multiplicadorAtual) * 0.875;
             saldo += ganhoLiquido;
             updateSaldo();
-
-            registrarTransacao("Mines - Ganho", ganhoLiquido.toFixed(2));
-            registrarTransacao("Taxa de saque (12.5%)", (-taxa).toFixed(2));
-
             document.getElementById('resultado').textContent = `Você sacou R$ ${ganhoLiquido.toFixed(2)}! 🤑`;
             document.getElementById('pararBtn').disabled = true;
+            mostrarBombas();
+        }
 
-            // Mostra todas as bombas
+        function mostrarBombas() {
             bombPositions.forEach(pos => {
                 const cell = document.getElementById('mines-grid').children[pos];
                 cell.className = 'cell bomb';
                 cell.textContent = '💣';
             });
-        }!`;
-
-        document.getElementById('pararBtn').disabled = true;
-
-        // Mostra todas as bombas
-        bombPositions.forEach(pos => {
-            const cell = document.getElementById('mines-grid').children[pos];
-            cell.className = 'cell bomb';
-            cell.textContent = '💣';
-        });
-    }
+        }
     </script>
 </body>
 </html>
