@@ -142,7 +142,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             updateSaldo();
             // Busca a versão do GitHub
-            fetch('https://api.github.com/repos/SEU_USUARIO/SEU_REPOSITORIO/commits/main')
+            fetch('https://api.github.com/repos/Krawk013-a/Inimigos-Cassino/commits/main')
                 .then(response => response.json())
                 .then(data => {
                     const commitHash = data.sha.substring(0, 7);
