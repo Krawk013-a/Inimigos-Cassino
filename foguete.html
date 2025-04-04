@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -163,7 +162,7 @@
     <h1>🚀 Foguete Multiplicador</h1>
     
     <div id="controls">
-        <input type="number" id="valorAposta" placeholder="Valor (R$)" min="1">
+        <input type="number" id="valorAposta" placeholder="Valor (R$)" min="1" step="0.01">
         <button onclick="iniciarJogo()">Jogar</button>
         <button id="pararBtn" onclick="pararJogo()" disabled>Sacar</button>
     </div>
@@ -181,10 +180,9 @@
     
     <p id="resultado"></p>
 
-    <script src="common.js"></script>
     <script>
         // Variáveis do jogo
-        let saldo = Number(localStorage.getItem('saldo')) || 0;
+        let saldo = parseFloat(localStorage.getItem('saldo')) || 0;
         let valorAposta = 0;
         let multiplicadorAtual = 1;
         let fogueteInterval;
@@ -198,17 +196,6 @@
         document.addEventListener('DOMContentLoaded', function() {
             gameContainer = document.getElementById('game-container');
             updateSaldo();
-            
-            // Busca a versão do GitHub
-            fetch('https://api.github.com/repos/Krawk013-a/Inimigos-Cassino/commits/main')
-                .then(response => response.json())
-                .then(data => {
-                    const commitHash = data.sha.substring(0, 7);
-                    document.getElementById('commit-version').textContent = `Versão: ${commitHash}`;
-                })
-                .catch(() => {
-                    document.getElementById('commit-version').textContent = 'Versão: offline';
-                });
         });
 
         // Atualiza o saldo na tela
@@ -216,6 +203,7 @@
             document.getElementById('saldo-value').textContent = saldo.toFixed(2);
             localStorage.setItem('saldo', saldo);
         }    
+        
         // Atualiza as informações do jogo
         function updateGameInfo() {
             document.getElementById('multiplicador-display').textContent = multiplicadorAtual.toFixed(2) + 'x';
@@ -277,10 +265,20 @@
 
         // Inicia um novo jogo
         function iniciarJogo() {
-            valorAposta = Number(document.getElementById('valorAposta').value);
+            valorAposta = parseFloat(document.getElementById('valorAposta').value);
             
-            if (valorAposta < 1 || valorAposta > saldo) {
-                alert('Aposta inválida ou saldo insuficiente!');
+            if (isNaN(valorAposta) {
+                alert('Por favor, insira um valor válido para a aposta!');
+                return;
+            }
+
+            if (valorAposta < 0.01) {
+                alert('O valor mínimo da aposta é R$ 0.01!');
+                return;
+            }
+
+            if (valorAposta > saldo) {
+                alert('Saldo insuficiente para esta aposta!');
                 return;
             }
 
@@ -335,17 +333,86 @@
 
         // Para o jogo e saca o valor
         function pararJogo() {
-    console.log("Parar jogo acionado!");
-    clearInterval(fogueteInterval);
-    clearInterval(fumacaInterval);
-    
-    const ganhoBruto = valorAposta * multiplicadorAtual;
-    console.log(`Ganho bruto: ${ganhoBruto}`);
-    
-    finalizarJogoComVitória(ganhoBruto, "Foguete");
-    document.getElementById('pararBtn').disabled = true;
-}
+            clearInterval(fogueteInterval);
+            clearInterval(fumacaInterval);
+            
+            const ganhoBruto = valorAposta * multiplicadorAtual;
+            finalizarJogoComVitoria(ganhoBruto, "Foguete");
+            document.getElementById('pararBtn').disabled = true;
+        }
 
+        // Funções de transação
+        function registrarTransacao(descricao, valorBruto, isGanho = false) {
+            const TAXA_APOSTAS = 0.125;
+            let valorLiquido = valorBruto;
+            let taxa = 0;
+            
+            // Obtém o saldo atual e garante que é um número
+            let saldoAtual = parseFloat(localStorage.getItem('saldo')) || 0;
+        
+            // Aplica taxa sobre ganhos
+            if (isGanho && valorBruto > 0) {
+                taxa = parseFloat((valorBruto * TAXA_APOSTAS).toFixed(2));
+                valorLiquido = parseFloat((valorBruto - taxa).toFixed(2));
+        
+                // Registra a taxa como transação separada
+                registrarTransacao(`Taxa sobre ${descricao.toLowerCase()}`, -taxa);
+            }
+        
+            // Atualiza saldo
+            let novoSaldo = parseFloat((saldoAtual + valorLiquido).toFixed(2));
+            localStorage.setItem('saldo', novoSaldo.toString());
+            saldo = novoSaldo;
+            
+            // Adiciona ao extrato
+            const extrato = JSON.parse(localStorage.getItem('extrato')) || [];
+            
+            extrato.push({
+                data: new Date().toLocaleString('pt-BR'),
+                descricao: descricao,
+                valor: valorLiquido,
+                saldo: novoSaldo
+            });
+        
+            localStorage.setItem('extrato', JSON.stringify(extrato));
+        
+            // Atualiza a tela
+            updateSaldo();
+        
+            return {
+                liquido: valorLiquido,
+                taxa: taxa
+            };
+        }
+        
+        function finalizarJogoComVitoria(ganhoBruto, nomeJogo) {
+            const resultado = registrarTransacao(`Ganho no ${nomeJogo}`, ganhoBruto, true);
+            
+            const mensagem = `🎉 Você ganhou R$${ganhoBruto.toFixed(2)}!\n` +
+                             `(Taxa de 12.5%: -R$${resultado.taxa.toFixed(2)})\n` +
+                             `Valor creditado: R$${resultado.liquido.toFixed(2)}`;
+            
+            // Atualiza a mensagem de resultado
+            const resultadoElement = document.getElementById('resultado');
+            if (resultadoElement) {
+                resultadoElement.innerHTML = 
+                    `🎉 ${nomeJogo}: Ganho de R$${resultado.liquido.toFixed(2)}<br>` +
+                    `<small>Taxa de 12.5%: R$${resultado.taxa.toFixed(2)}</small>`;
+                resultadoElement.className = 'ganho';
+            }
+            
+            updateSaldo();
+        }
+
+        // Atualiza o botão de aposta quando o valor é alterado
+        document.getElementById('valorAposta').addEventListener('input', function() {
+            const valor = parseFloat(this.value);
+            if (valor && valor > 0) {
+                document.getElementById('btn-apostar').disabled = false;
+            } else {
+                document.getElementById('btn-apostar').disabled = true;
+            }
+        });
     </script>
 </body>
 </html>
