@@ -334,13 +334,17 @@
 
         // Para o jogo e saca o valor
         function pararJogo() {
-            clearInterval(fogueteInterval);
-            clearInterval(fumacaInterval);
-            
-            const ganhoBruto = valorAposta * multiplicadorAtual;
-            finalizarJogoComVitória(ganhoBruto, "Foguete");
-            document.getElementById('pararBtn').disabled = true;
-        }
+    console.log("Parar jogo acionado!");
+    clearInterval(fogueteInterval);
+    clearInterval(fumacaInterval);
+    
+    const ganhoBruto = valorAposta * multiplicadorAtual;
+    console.log(`Ganho bruto: ${ganhoBruto}`);
+    
+    finalizarJogoComVitória(ganhoBruto, "Foguete");
+    document.getElementById('pararBtn').disabled = true;
+}
+
     </script>
 </body>
 </html>
