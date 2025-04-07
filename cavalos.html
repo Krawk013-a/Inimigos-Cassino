@@ -389,41 +389,54 @@
         
         function iniciarCorrida() {
             if (corridaEmAndamento || !apostaFeita) return;
-            
+
             corridaEmAndamento = true;
             document.getElementById('btn-corrida').disabled = true;
             document.getElementById('resultado-corrida').textContent = "Corrida em andamento...";
-            
+
             // Resetar posições dos cavalos
             Object.keys(CAVALOS).forEach(num => {
                 document.getElementById(`cavalo-${num}`).style.left = '20px';
             });
-            
-            // Simular corrida
+
+            // Simular corrida com velocidades variáveis
             const velocidades = {};
+            const modificadores = {};
             Object.keys(CAVALOS).forEach(num => {
-                // Velocidade base + fator aleatório (o cavalo com menor odds é um pouco mais rápido)
                 velocidades[num] = 0.5 + Math.random() * (1 - (0.1 * (5 - num)));
+                modificadores[num] = 1;
             });
-            
+
             const linhaChegada = document.getElementById('pista-corrida').offsetWidth - 40;
+            let tempo = 0;
+
             const animacao = setInterval(() => {
+                tempo++;
+
+                // A cada 20 ciclos (~1s), muda o modificador de velocidade
+                if (tempo % 20 === 0) {
+                    Object.keys(CAVALOS).forEach(num => {
+                        const fator = 0.8 + Math.random() * 0.8; // entre 0.8x e 1.6x
+                        modificadores[num] = fator;
+                    });
+                }
+
                 let corridaTerminada = false;
                 let vencedor = null;
-                
+
                 Object.keys(CAVALOS).forEach(num => {
                     const cavalo = document.getElementById(`cavalo-${num}`);
                     const posAtual = parseFloat(cavalo.style.left) || 20;
-                    const novaPos = posAtual + velocidades[num];
-                    
+                    const novaPos = posAtual + velocidades[num] * modificadores[num];
+
                     cavalo.style.left = `${novaPos}px`;
-                    
+
                     if (novaPos >= linhaChegada && !vencedor) {
                         vencedor = num;
                         corridaTerminada = true;
                     }
                 });
-                
+
                 if (corridaTerminada) {
                     clearInterval(animacao);
                     finalizarCorrida(vencedor);
