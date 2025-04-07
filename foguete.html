@@ -396,18 +396,25 @@
             updateSaldo();
         }
         
-        function finalizarJogoComVitoria(ganhoBruto, nomeJogo) {
-            const resultado = registrarTransacao(`Ganho no ${nomeJogo}`, ganhoBruto, true);
+    // Função para finalizar com vitória
+    function finalizarJogoComVitoria(ganhoBruto, nomeJogo) {
+        // Verifica novamente se o saque já foi realizado (dupla verificação)
+        if (saqueRealizado) return;
+        
+        const resultado = registrarTransacao(`Ganho no ${nomeJogo}`, ganhoBruto, true);
             
-            // Atualiza a mensagem de resultado
-            const resultadoElement = document.getElementById('resultado');
-            if (resultadoElement) {
-                resultadoElement.innerHTML = 
-                    `🎉 ${nomeJogo}: Ganho de R$${resultado.liquido.toFixed(2)}<br>` +
-                    `<small>Taxa de 12.5%: R$${resultado.taxa.toFixed(2)}</small>`;
-                resultadoElement.className = 'ganho';
-            }
+        // Atualiza a mensagem de resultado
+        const resultadoElement = document.getElementById('resultado');
+        if (resultadoElement) {
+            resultadoElement.innerHTML = 
+                `🎉 ${nomeJogo}: Ganho de R$${resultado.liquido.toFixed(2)}<br>` +
+                `<small>Taxa de 12.5%: R$${resultado.taxa.toFixed(2)}</small>`;
+            resultadoElement.className = 'ganho';
         }
-    </script>
+        
+        // Marca o saque como realizado
+        saqueRealizado = true;
+    }
+</script>
 </body>
 </html>
