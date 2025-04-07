@@ -113,6 +113,7 @@
     <input type="number" id="valorAposta" placeholder="Valor (R$)" min="0.10" step="0.10">
     <button onclick="girarSlot()">Girar</button>
     <button onclick="toggleAutoPlay()" id="autoPlayBtn">Ativar Auto</button>
+    <button onclick="adicionarSaldo(50)">+ R$50</button>
   </div>
 
   <div class="info">
@@ -129,11 +130,21 @@
   </div>
 
   <script>
-    let saldo = 100.00;
+    let saldo = localStorage.getItem('saldoSlot') ? parseFloat(localStorage.getItem('saldoSlot')) : 100.00;
     const simbolos = ['🐯', '🍒', '🔔', '⭐', '💎', '🍀', '🪙'];
     const linhas = 3;
     const colunas = 3;
     let autoPlayAtivo = false;
+
+    function salvarSaldo() {
+      localStorage.setItem('saldoSlot', saldo.toFixed(2));
+    }
+
+    function adicionarSaldo(valor) {
+      saldo += valor;
+      salvarSaldo();
+      atualizarInterface();
+    }
 
     function criarGridVisual() {
       const container = document.getElementById('slotGrid');
@@ -185,6 +196,7 @@
       }
 
       saldo -= aposta;
+      salvarSaldo();
       atualizarInterface();
 
       let count = 0;
@@ -233,6 +245,7 @@
         resultado.textContent = 'Não foi dessa vez 😢';
       }
 
+      salvarSaldo();
       document.getElementById('multiplicador').textContent = multiplicador + 'x';
       atualizarInterface();
     }
