@@ -210,6 +210,13 @@
         .item-historico:last-child {
             border-bottom: none;
         }
+        .velocidade {
+            position: absolute;
+            top: 35px;
+            left: 0;
+            font-size: 11px;
+            color: #bbb;
+        }
     </style>
 </head>
 <body>
@@ -387,6 +394,17 @@
                 `Ganho potencial: R$${(valorAposta * CAVALOS[cavaloSelecionado].odds).toFixed(2)}`;
         }
         
+        function atualizarVelocidadeVisual(num, velocidade) {
+            let cavalo = document.getElementById(`cavalo-${num}`);
+            let vel = cavalo.querySelector(".velocidade");
+            if (!vel) {
+                vel = document.createElement("div");
+                vel.className = "velocidade";
+                cavalo.appendChild(vel);
+            }
+            vel.textContent = `${velocidade.toFixed(1)} km/h`;
+        }
+
         function iniciarCorrida() {
             if (corridaEmAndamento || !apostaFeita) return;
 
@@ -396,10 +414,17 @@
 
             // Resetar posições dos cavalos
             Object.keys(CAVALOS).forEach(num => {
-                document.getElementById(`cavalo-${num}`).style.left = '20px';
+                const cavalo = document.getElementById(`cavalo-${num}`);
+                cavalo.style.left = '20px';
             });
 
-            // Simular corrida com velocidades variáveis
+            // Gerar velocidades fictícias (km/h) para exibição
+            const velocidadesKMH = {};
+            Object.keys(CAVALOS).forEach(num => {
+                velocidadesKMH[num] = 40 + Math.random() * 25; // Entre 40 e 65 km/h
+                atualizarVelocidadeVisual(num, velocidadesKMH[num]);
+            });
+
             const velocidades = {};
             const modificadores = {};
             Object.keys(CAVALOS).forEach(num => {
@@ -416,7 +441,7 @@
                 // A cada 20 ciclos (~1s), muda o modificador de velocidade
                 if (tempo % 20 === 0) {
                     Object.keys(CAVALOS).forEach(num => {
-                        const fator = 0.8 + Math.random() * 0.8; // entre 0.8x e 1.6x
+                        const fator = 0.8 + Math.random() * 0.8;
                         modificadores[num] = fator;
                     });
                 }
@@ -437,9 +462,10 @@
                     }
                 });
 
-                if (corridaTerminada) {
+                if (corridaTerminada && vencedor) {
                     clearInterval(animacao);
-                    finalizarCorrida(vencedor);
+                    corridaEmAndamento = false;
+                    exibirResultado(vencedor);
                 }
             }, 50);
         }
