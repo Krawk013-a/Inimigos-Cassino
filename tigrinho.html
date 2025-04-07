@@ -1,516 +1,245 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tigrinho - Cassino TCC</title>
-    <style>
-        :root {
-            --cor-primaria: #ffcc00;
-            --cor-fundo: #121212;
-            --cor-painel: #1e1e1e;
-            --cor-texto: white;
-            --cor-ganho: #4CAF50;
-            --cor-perda: #f44336;
-        }
-        
-        body {
-            font-family: 'Arial', sans-serif;
-            background-color: var(--cor-fundo);
-            color: var(--cor-texto);
-            text-align: center;
-            margin: 0;
-            padding: 20px;
-        }
-        
-        h1 {
-            color: var(--cor-primaria);
-            margin-bottom: 20px;
-        }
-        
-        #controls {
-            background-color: var(--cor-painel);
-            padding: 15px;
-            border-radius: 10px;
-            margin: 0 auto 20px;
-            max-width: 500px;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px;
-        }
-        
-        input, button {
-            padding: 12px 15px;
-            border-radius: 8px;
-            border: none;
-            font-size: 16px;
-        }
-        
-        input {
-            width: 120px;
-            background-color: #333;
-            color: white;
-        }
-        
-        button {
-            background-color: var(--cor-primaria);
-            color: black;
-            font-weight: bold;
-            cursor: pointer;
-            min-width: 100px;
-            transition: all 0.2s;
-        }
-        
-        button:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
-        }
-        
-        button:disabled {
-            opacity: 0.6;
-            transform: none !important;
-            box-shadow: none;
-            cursor: not-allowed;
-        }
-        
-        #slot-machine {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin: 20px auto;
-            background-color: var(--cor-painel);
-            padding: 20px;
-            border-radius: 10px;
-            max-width: 500px;
-        }
-        
-        .slot-column {
-            width: 80px;
-            height: 120px;
-            position: relative;
-            overflow: hidden;
-            border-radius: 5px;
-            background-color: #2a2a2a;
-        }
-        
-        .slot-item {
-            width: 80px;
-            height: 80px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 40px;
-            position: absolute;
-        }
-        
-        #info-panel {
-            background-color: var(--cor-painel);
-            padding: 15px;
-            border-radius: 10px;
-            margin: 20px auto;
-            max-width: 500px;
-            display: flex;
-            justify-content: space-around;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        
-        .info-item {
-            margin: 0;
-        }
-        
-        .info-value {
-            color: var(--cor-primaria);
-            font-weight: bold;
-            font-size: 1.2em;
-        }
-        
-        #resultado {
-            min-height: 24px;
-            font-size: 18px;
-            margin: 10px 0;
-            padding: 10px;
-            border-radius: 5px;
-        }
-        
-        .ganho {
-            background-color: rgba(76, 175, 80, 0.2);
-            color: var(--cor-ganho);
-        }
-        
-        .perda {
-            background-color: rgba(244, 67, 54, 0.2);
-            color: var(--cor-perda);
-        }
-        
-        #multiplicador-display {
-            font-size: 24px;
-            font-weight: bold;
-            color: var(--cor-primaria);
-            margin: 10px 0;
-        }
-        
-        footer {
-            background-color: #1a1a1a;
-            color: #999;
-            text-align: center;
-            padding: 15px;
-            margin-top: 30px;
-            font-size: 12px;
-            border-top: 1px solid #333;
-        }
-        
-        #commit-version {
-            font-family: monospace;
-            margin-top: 5px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tigrinho Slot - Cassino TCC</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #121212;
+      color: white;
+      text-align: center;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+
+    .slot-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 80px);
+      grid-template-rows: repeat(3, 80px);
+      gap: 15px;
+      justify-content: center;
+      margin: 40px auto;
+    }
+
+    .slot {
+      width: 80px;
+      height: 80px;
+      background: #222;
+      border: 4px solid #ffcc00;
+      border-radius: 10px;
+      font-size: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 15px #ffcc00;
+    }
+
+    .controls {
+      margin-top: 30px;
+    }
+
+    input,
+    button {
+      padding: 10px;
+      margin: 8px;
+      font-size: 16px;
+      border-radius: 5px;
+      border: none;
+    }
+
+    input {
+      width: 100px;
+      background: #2a2a2a;
+      color: white;
+    }
+
+    button {
+      background: #ffcc00;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+      background: #ffdd33;
+    }
+
+    .info {
+      margin-top: 20px;
+      font-size: 18px;
+    }
+
+    #resultado {
+      margin-top: 20px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .confete {
+      position: fixed;
+      top: -10px;
+      font-size: 24px;
+      animation: cair 3s forwards;
+      z-index: 9999;
+    }
+
+    @keyframes cair {
+      to {
+        top: 100vh;
+        opacity: 0;
+        transform: rotate(360deg);
+      }
+    }
+
+    .legenda {
+      margin-top: 20px;
+      font-size: 16px;
+      color: #ccc;
+    }
+  </style>
 </head>
+
 <body>
-    <h1>🐯 Tigrinho</h1>
-    
-    <div id="controls">
-        <input type="number" id="valorAposta" placeholder="Valor (R$)" min="1" step="0.01">
-        <button id="btnJogar">Girar</button>
-        <button id="btnAuto" disabled>Auto</button>
-    </div>
-    
-    <div id="slot-machine">
-        <div class="slot-column" id="slot1">
-            <div class="slot-item">🍒</div>
-            <div class="slot-item">🍋</div>
-            <div class="slot-item">🍊</div>
-        </div>
-        <div class="slot-column" id="slot2">
-            <div class="slot-item">🍒</div>
-            <div class="slot-item">🍋</div>
-            <div class="slot-item">🍊</div>
-        </div>
-        <div class="slot-column" id="slot3">
-            <div class="slot-item">🍒</div>
-            <div class="slot-item">🍋</div>
-            <div class="slot-item">🍊</div>
-        </div>
-    </div>
-    
-    <div id="multiplicador-display">Multiplicador: 1.00x</div>
-    
-    <div id="info-panel">
-        <div class="info-item">Saldo: <span class="info-value" id="saldo-value">0</span></div>
-        <div class="info-item">Aposta: <span class="info-value" id="aposta-value">0</span></div>
-        <div class="info-item">Ganho: <span class="info-value" id="ganho-value">0</span></div>
-    </div>
-    
-    <p id="resultado">Faça sua aposta e clique em Girar</p>
+  <h1>🎰 Tigrinho Slot</h1>
 
-    <footer>
-        <p>Este site é um simulador educacional (TCC). Não utilize valores reais.</p>
-        <p id="commit-version">Versão: carregando...</p>
-    </footer>
+  <div class="slot-grid" id="slotGrid"></div>
 
-    <script>
-        // Símbolos do jogo e seus multiplicadores
-        const SIMBOLOS = [
-            { emoji: '🍒', peso: 40, multiplicador: 1.5 },
-            { emoji: '🍋', peso: 30, multiplicador: 2 },
-            { emoji: '🍊', peso: 20, multiplicador: 3 },
-            { emoji: '🍇', peso: 10, multiplicador: 5 },
-            { emoji: '🍉', peso: 8, multiplicador: 8 },
-            { emoji: '💰', peso: 5, multiplicador: 15 },
-            { emoji: '💎', peso: 2, multiplicador: 50 },
-            { emoji: '🐯', peso: 1, multiplicador: 100 }
-        ];
+  <div class="controls">
+    <input type="number" id="valorAposta" placeholder="Valor (R$)" min="0.10" step="0.10">
+    <button onclick="girarSlot()">Girar</button>
+    <button onclick="toggleAutoPlay()" id="autoPlayBtn">Ativar Auto</button>
+  </div>
 
-        // Variáveis do jogo
-        let saldo = parseFloat(localStorage.getItem('saldo')) || 100.00;
-        let valorAposta = 0;
-        let rodando = false;
-        let multiplicadorAtual = 1;
-        let resultados = [];
-        let processando = false;
+  <div class="info">
+    Saldo: R$ <span id="saldo">100.00</span><br>
+    Multiplicador: <span id="multiplicador">1x</span>
+  </div>
 
-        // Elementos DOM
-        const btnJogar = document.getElementById('btnJogar');
-        const btnAuto = document.getElementById('btnAuto');
-        const inputAposta = document.getElementById('valorAposta');
+  <div id="resultado"></div>
 
-        // Inicialização
-        document.addEventListener('DOMContentLoaded', function() {
-            updateSaldo();
-            carregarVersao();
-            inicializarSlots();
-            
-            // Configura eventos
-            btnJogar.addEventListener('click', iniciarJogo);
-            inputAposta.addEventListener('input', validarAposta);
-        });
+  <div class="legenda">
+    ⭐⭐⭐ = x3<br>
+    💎💎💎 = x10<br>
+    Qualquer 3 iguais na vertical, horizontal ou diagonal = prêmio!
+  </div>
 
-        function carregarVersao() {
-            fetch('https://api.github.com/repos/Krawk013-a/Inimigos-Cassino/commits/main')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.length > 0) {
-                        const commitHash = data[0].sha.substring(0, 7);
-                        document.getElementById('commit-version').textContent = `Versão: ${commitHash}`;
-                    }
-                })
-                .catch(() => {
-                    document.getElementById('commit-version').textContent = 'Versão: offline';
-                });
+  <script>
+    let saldo = 100.00;
+    const simbolos = ['🐯', '🍒', '🔔', '⭐', '💎', '🍀', '🪙'];
+    const linhas = 3;
+    const colunas = 3;
+    let autoPlayAtivo = false;
+
+    function criarGridVisual() {
+      const container = document.getElementById('slotGrid');
+      for (let i = 0; i < linhas * colunas; i++) {
+        const div = document.createElement('div');
+        div.className = 'slot';
+        div.id = 'slot' + i;
+        container.appendChild(div);
+      }
+    }
+
+    function atualizarInterface() {
+      document.getElementById('saldo').textContent = saldo.toFixed(2);
+    }
+
+    function soltarConfetes() {
+      for (let i = 0; i < 50; i++) {
+        const confete = document.createElement('div');
+        confete.classList.add('confete');
+        confete.textContent = '🎉';
+        confete.style.left = Math.random() * 100 + 'vw';
+        document.body.appendChild(confete);
+        setTimeout(() => confete.remove(), 3000);
+      }
+    }
+
+    function toggleAutoPlay() {
+      autoPlayAtivo = !autoPlayAtivo;
+      document.getElementById('autoPlayBtn').textContent = autoPlayAtivo ? 'Desativar Auto' : 'Ativar Auto';
+      if (autoPlayAtivo) autoPlay();
+    }
+
+    function autoPlay() {
+      if (!autoPlayAtivo) return;
+      girarSlot(true);
+      setTimeout(autoPlay, 3000);
+    }
+
+    function girarSlot(auto = false) {
+      const aposta = parseFloat(document.getElementById('valorAposta').value);
+      const resultado = document.getElementById('resultado');
+      resultado.textContent = '';
+
+      if (isNaN(aposta) || aposta <= 0 || aposta > saldo) {
+        resultado.textContent = 'Aposta inválida ou saldo insuficiente!';
+        autoPlayAtivo = false;
+        document.getElementById('autoPlayBtn').textContent = 'Ativar Auto';
+        return;
+      }
+
+      saldo -= aposta;
+      atualizarInterface();
+
+      let count = 0;
+      const totalSlots = linhas * colunas;
+      const animacao = setInterval(() => {
+        for (let i = 0; i < totalSlots; i++) {
+          document.getElementById('slot' + i).textContent = simbolos[Math.floor(Math.random() * simbolos.length)];
         }
-
-        function validarAposta() {
-            const valor = parseFloat(inputAposta.value);
-            if (valor && valor > 0 && valor <= saldo) {
-                btnJogar.disabled = false;
-            } else {
-                btnJogar.disabled = true;
-            }
+        count++;
+        if (count > 15) {
+          clearInterval(animacao);
+          definirResultadoFinal(aposta);
         }
+      }, 100);
+    }
 
-        function updateSaldo() {
-            document.getElementById('saldo-value').textContent = saldo.toFixed(2);
-            localStorage.setItem('saldo', saldo);
+    function definirResultadoFinal(aposta) {
+      let grid = [];
+      for (let l = 0; l < linhas; l++) {
+        grid[l] = [];
+        for (let c = 0; c < colunas; c++) {
+          const simbolo = simbolos[Math.floor(Math.random() * simbolos.length)];
+          grid[l][c] = simbolo;
+          document.getElementById('slot' + (l * colunas + c)).textContent = simbolo;
         }
+      }
 
-        function inicializarSlots() {
-            // Preenche cada coluna com todos os símbolos
-            for (let i = 1; i <= 3; i++) {
-                const slot = document.getElementById(`slot${i}`);
-                slot.innerHTML = '';
-                
-                // Adiciona todos os símbolos em posições aleatórias
-                SIMBOLOS.forEach(simbolo => {
-                    const item = document.createElement('div');
-                    item.className = 'slot-item';
-                    item.textContent = simbolo.emoji;
-                    item.style.top = `${Math.random() * 40}px`;
-                    slot.appendChild(item);
-                });
-            }
-        }
+      let multiplicador = 0;
 
-        function iniciarJogo() {
-            if (rodando || processando) return;
-            
-            valorAposta = parseFloat(inputAposta.value);
-            
-            if (isNaN(valorAposta)) {
-                mostrarResultado('Por favor, insira um valor válido para a aposta!', 'error');
-                return;
-            }
+      for (let i = 0; i < linhas; i++) {
+        if (grid[i][0] === grid[i][1] && grid[i][1] === grid[i][2]) multiplicador += 3;
+      }
+      for (let j = 0; j < colunas; j++) {
+        if (grid[0][j] === grid[1][j] && grid[1][j] === grid[2][j]) multiplicador += 3;
+      }
+      if (grid[0][0] === grid[1][1] && grid[1][1] === grid[2][2]) multiplicador += 3;
+      if (grid[0][2] === grid[1][1] && grid[1][1] === grid[2][0]) multiplicador += 3;
 
-            if (valorAposta < 0.01) {
-                mostrarResultado('O valor mínimo da aposta é R$ 0.01!', 'error');
-                return;
-            }
+      const resultado = document.getElementById('resultado');
+      if (multiplicador > 0) {
+        const ganho = aposta * multiplicador;
+        saldo += ganho;
+        resultado.textContent = `Você ganhou R$ ${ganho.toFixed(2)}! 🎉`;
+        soltarConfetes();
+      } else {
+        resultado.textContent = 'Não foi dessa vez 😢';
+      }
 
-            if (valorAposta > saldo) {
-                mostrarResultado('Saldo insuficiente para esta aposta!', 'error');
-                return;
-            }
+      document.getElementById('multiplicador').textContent = multiplicador + 'x';
+      atualizarInterface();
+    }
 
-            // Deduz a aposta
-            registrarTransacao("Aposta no Tigrinho", -valorAposta);
-            document.getElementById('aposta-value').textContent = valorAposta.toFixed(2);
-            
-            // Desativa os botões durante a rolagem
-            btnJogar.disabled = true;
-            inputAposta.disabled = true;
-            rodando = true;
-            processando = true;
-            
-            // Limpa resultado anterior
-            document.getElementById('resultado').textContent = '';
-            document.getElementById('ganho-value').textContent = '0.00';
-            
-            // Animação de rolagem
-            const duracao = 2000 + Math.random() * 1000;
-            const startTime = Date.now();
-            
-            // Rolagem para cada coluna
-            for (let i = 1; i <= 3; i++) {
-                rolarSlot(i, duracao);
-            }
-            
-            // Finaliza após a duração
-            setTimeout(() => {
-                finalizarJogo();
-            }, duracao);
-        }
-
-        function rolarSlot(slotNum, duracao) {
-            const slot = document.getElementById(`slot${slotNum}`);
-            const items = slot.querySelectorAll('.slot-item');
-            const startTime = Date.now();
-            
-            function animar() {
-                const elapsed = Date.now() - startTime;
-                const progresso = elapsed / duracao;
-                
-                if (progresso < 1) {
-                    // Move todos os itens para cima
-                    items.forEach(item => {
-                        const currentTop = parseFloat(item.style.top || 0);
-                        let newTop = currentTop - 5;
-                        
-                        // Se o item sair da vista, move para baixo
-                        if (newTop < -80) {
-                            newTop = 120;
-                        }
-                        
-                        item.style.top = `${newTop}px`;
-                    });
-                    
-                    requestAnimationFrame(animar);
-                } else {
-                    // Posiciona os itens corretamente no final
-                    posicionarItensFinal(slotNum);
-                }
-            }
-            
-            animar();
-        }
-
-        function posicionarItensFinal(slotNum) {
-            const slot = document.getElementById(`slot${slotNum}`);
-            const items = Array.from(slot.querySelectorAll('.slot-item'));
-            
-            // Seleciona um símbolo aleatório baseado no peso
-            const totalPeso = SIMBOLOS.reduce((sum, simbolo) => sum + simbolo.peso, 0);
-            let random = Math.random() * totalPeso;
-            let simboloSelecionado;
-            
-            for (const simbolo of SIMBOLOS) {
-                random -= simbolo.peso;
-                if (random <= 0) {
-                    simboloSelecionado = simbolo;
-                    break;
-                }
-            }
-            
-            // Armazena o resultado
-            resultados[slotNum - 1] = simboloSelecionado;
-            
-            // Posiciona o símbolo selecionado no meio
-            items.forEach((item, index) => {
-                if (item.textContent === simboloSelecionado.emoji) {
-                    item.style.top = '20px';
-                } else {
-                    // Posiciona outros símbolos acima ou abaixo
-                    item.style.top = `${index % 2 === 0 ? -40 : 80}px`;
-                }
-            });
-        }
-
-        function finalizarJogo() {
-            rodando = false;
-            processando = false;
-            
-            // Ativa os botões novamente
-            btnJogar.disabled = false;
-            inputAposta.disabled = false;
-            
-            // Verifica os resultados
-            verificarResultados();
-        }
-
-        function verificarResultados() {
-            // Verifica se todos os símbolos são iguais
-            const todosIguais = resultados.every(
-                (val, i, arr) => val.emoji === arr[0].emoji
-            );
-            
-            // Verifica se há pelo menos dois iguais
-            const temDoisIguais = resultados.some(
-                (val, i, arr) => arr.filter(v => v.emoji === val.emoji).length >= 2
-            );
-            
-            let ganhoBruto = 0;
-            
-            if (todosIguais) {
-                // Todos 3 símbolos iguais - maior prêmio
-                ganhoBruto = valorAposta * resultados[0].multiplicador * 3;
-                mostrarResultado(`🎉 3x ${resultados[0].emoji} - Ganhou ${(resultados[0].multiplicador * 3).toFixed(1)}x!`, 'ganho');
-            } else if (temDoisIguais) {
-                // Dois símbolos iguais - prêmio menor
-                const simboloComum = resultados.reduce((a, b) => 
-                    resultados.filter(v => v.emoji === a.emoji).length >= 2 ? a : b
-                );
-                ganhoBruto = valorAposta * simboloComum.multiplicador * 1.5;
-                mostrarResultado(`👍 2x ${simboloComum.emoji} - Ganhou ${(simboloComum.multiplicador * 1.5).toFixed(1)}x!`, 'ganho');
-            } else {
-                // Nenhuma combinação - perdeu
-                mostrarResultado('😞 Sem combinações desta vez. Tente novamente!', 'perda');
-            }
-            
-            if (ganhoBruto > 0) {
-                finalizarJogoComVitoria(ganhoBruto, "Tigrinho");
-            }
-            
-            // Atualiza a interface
-            document.getElementById('ganho-value').textContent = ganhoBruto.toFixed(2);
-            
-            // Limpa os resultados para a próxima jogada
-            resultados = [];
-        }
-
-        // Funções de transação
-        function registrarTransacao(descricao, valorBruto, isGanho = false) {
-            const TAXA_APOSTAS = 0.125;
-            let valorLiquido = valorBruto;
-            let taxa = 0;
-            
-            // Obtém o saldo atual
-            let saldoAtual = parseFloat(localStorage.getItem('saldo')) || 0;
-        
-            // Aplica taxa sobre ganhos
-            if (isGanho && valorBruto > 0) {
-                taxa = parseFloat((valorBruto * TAXA_APOSTAS).toFixed(2));
-                valorLiquido = parseFloat((valorBruto - taxa).toFixed(2));
-        
-                // Registra a taxa como transação separada
-                registrarTransacao(`Taxa sobre ${descricao.toLowerCase()}`, -taxa);
-            }
-        
-            // Atualiza saldo
-            let novoSaldo = parseFloat((saldoAtual + valorLiquido).toFixed(2));
-            localStorage.setItem('saldo', novoSaldo.toString());
-            saldo = novoSaldo;
-            
-            // Adiciona ao extrato
-            const extrato = JSON.parse(localStorage.getItem('extrato')) || [];
-            
-            extrato.push({
-                data: new Date().toLocaleString('pt-BR'),
-                descricao: descricao,
-                valor: valorLiquido,
-                saldo: novoSaldo
-            });
-        
-            localStorage.setItem('extrato', JSON.stringify(extrato));
-        
-            // Atualiza a tela
-            updateSaldo();
-        }
-        
-        function finalizarJogoComVitoria(ganhoBruto, nomeJogo) {
-            const resultado = registrarTransacao(`Ganho no ${nomeJogo}`, ganhoBruto, true);
-            
-            // Atualiza a mensagem de resultado
-            const resultadoElement = document.getElementById('resultado');
-            if (resultadoElement) {
-                resultadoElement.innerHTML += 
-                    `<br>💰 Valor creditado: R$${resultado.liquido.toFixed(2)} (Taxa: R$${resultado.taxa.toFixed(2)})`;
-            }
-        }
-
-        function mostrarResultado(mensagem, tipo) {
-            const elemento = document.getElementById('resultado');
-            elemento.textContent = mensagem;
-            elemento.className = tipo || '';
-        }
-    </script>
+    criarGridVisual();
+    atualizarInterface();
+  </script>
 </body>
+
 </html>
