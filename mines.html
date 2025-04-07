@@ -233,7 +233,7 @@
         function validarNumBombas() {
             const input = document.getElementById('numBombas');
             if (input.value < 1) input.value = 1;
-            if (input.value > 15) input.value = 25;
+            if (input.value > 25) input.value = 25;
         }
 
         function updateSaldo() {
@@ -269,7 +269,7 @@
                 return;
             }
 
-            if (numBombas < 1 || numBombas > 15) {
+            if (numBombas < 1 || numBombas > 25) {
                 mostrarResultado('Por favor, selecione entre 1 e 25 bombas!', 'error');
                 return;
             }
