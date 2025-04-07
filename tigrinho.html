@@ -2,257 +2,403 @@
 <html lang="pt-BR">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tigrinho Slot - Cassino TCC</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #121212;
-      color: white;
-      text-align: center;
-      padding: 20px;
-      overflow-x: hidden;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tigrinho - Cassino TCC</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #121212;
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
 
-    .slot-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 80px);
-      grid-template-rows: repeat(3, 80px);
-      gap: 15px;
-      justify-content: center;
-      margin: 40px auto;
-    }
+        #tigrinho-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 80px);
+            gap: 15px;
+            margin: 20px auto;
+            justify-content: center;
+        }
 
-    .slot {
-      width: 80px;
-      height: 80px;
-      background: #222;
-      border: 4px solid #ffcc00;
-      border-radius: 10px;
-      font-size: 48px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 0 15px #ffcc00;
-    }
+        .cell {
+            width: 80px;
+            height: 80px;
+            background: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 36px;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.3s;
+            user-select: none;
+            border: 3px solid #ffcc00;
+            box-shadow: 0 0 10px #ffcc00;
+        }
 
-    .controls {
-      margin-top: 30px;
-    }
+        .cell:hover {
+            background: #444;
+            transform: scale(1.05);
+        }
 
-    input,
-    button {
-      padding: 10px;
-      margin: 8px;
-      font-size: 16px;
-      border-radius: 5px;
-      border: none;
-    }
+        .revealed {
+            background: #ffcc00;
+            color: black;
+            transform: scale(0.95);
+            cursor: default;
+        }
 
-    input {
-      width: 100px;
-      background: #2a2a2a;
-      color: white;
-    }
+        #controls {
+            margin: 20px auto;
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 500px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
 
-    button {
-      background: #ffcc00;
-      color: black;
-      font-weight: bold;
-      cursor: pointer;
-      transition: 0.2s;
-    }
+        input,
+        button {
+            padding: 12px;
+            margin: 8px;
+            border-radius: 5px;
+            border: none;
+            font-size: 16px;
+        }
 
-    button:hover {
-      transform: scale(1.05);
-      background: #ffdd33;
-    }
+        input {
+            background: #2a2a2a;
+            color: white;
+            width: 120px;
+        }
 
-    .info {
-      margin-top: 20px;
-      font-size: 18px;
-    }
+        button {
+            background: #ffcc00;
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 100px;
+        }
 
-    #resultado {
-      margin-top: 20px;
-      font-size: 20px;
-      font-weight: bold;
-    }
+        button:hover {
+            transform: scale(1.05);
+            background: #ffdd33;
+        }
 
-    .confete {
-      position: fixed;
-      top: -10px;
-      font-size: 24px;
-      animation: cair 3s forwards;
-      z-index: 9999;
-    }
+        button:disabled {
+            opacity: 0.5;
+            transform: none !important;
+            background: #cccc00;
+            cursor: not-allowed;
+        }
 
-    @keyframes cair {
-      to {
-        top: 100vh;
-        opacity: 0;
-        transform: rotate(360deg);
-      }
-    }
+        #info-panel {
+            background: #1e1e1e;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px auto;
+            max-width: 500px;
+            display: flex;
+            justify-content: space-around;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
 
-    .legenda {
-      margin-top: 20px;
-      font-size: 16px;
-      color: #ccc;
-    }
-  </style>
+        .info-item {
+            margin: 0 10px;
+            font-size: 18px;
+        }
+
+        #multiplicador {
+            color: #ffcc00;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        #resultado {
+            min-height: 24px;
+            font-size: 18px;
+            margin: 20px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .win-message {
+            background: rgba(0, 200, 0, 0.2);
+            color: #4CAF50;
+        }
+
+        .lose-message {
+            background: rgba(200, 0, 0, 0.2);
+            color: #f44336;
+        }
+
+        footer {
+            background-color: #1a1a1a;
+            color: #999;
+            text-align: center;
+            padding: 15px;
+            margin-top: 30px;
+            font-size: 12px;
+            border-top: 1px solid #333;
+        }
+
+        #commit-version {
+            font-family: monospace;
+            margin-top: 5px;
+        }
+
+        .emoji {
+            font-size: 1.2em;
+        }
+
+        .confete {
+            position: fixed;
+            top: -10px;
+            font-size: 24px;
+            animation: cair 3s forwards;
+            z-index: 9999;
+        }
+
+        @keyframes cair {
+            to {
+                top: 100vh;
+                opacity: 0;
+                transform: rotate(360deg);
+            }
+        }
+
+        .legenda {
+            margin-top: 20px;
+            font-size: 16px;
+            color: #ccc;
+            background: #1e1e1e;
+            padding: 15px;
+            border-radius: 10px;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+    </style>
 </head>
 
 <body>
-  <h1>🎰 Tigrinho Slot</h1>
 
-  <div class="slot-grid" id="slotGrid"></div>
+    <h1>🐯 Tigrinho <span class="emoji">🎰</span></h1>
 
-  <div class="controls">
-    <input type="number" id="valorAposta" placeholder="Valor (R$)" min="0.10" step="0.10">
-    <button onclick="girarSlot()">Girar</button>
-    <button onclick="toggleAutoPlay()" id="autoPlayBtn">Ativar Auto</button>
-    <button onclick="adicionarSaldo(50)">+ R$50</button>
-  </div>
+    <div id="controls">
+        <input type="number" id="valorAposta" placeholder="Valor (R$)" min="0.10" step="0.10">
+        <button onclick="iniciarJogo()">Girar</button>
+        <button id="autoBtn" onclick="toggleAutoPlay()">Ativar Auto</button>
+    </div>
 
-  <div class="info">
-    Saldo: R$ <span id="saldo">100.00</span><br>
-    Multiplicador: <span id="multiplicador">1x</span>
-  </div>
+    <div id="info-panel">
+        <div class="info-item">Saldo: R$ <span id="saldo-value">100.00</span></div>
+        <div class="info-item">Multiplicador: <span id="multiplicador">1x</span></div>
+        <div class="info-item">Ganho: R$ <span id="ganho">0.00</span></div>
+    </div>
 
-  <div id="resultado"></div>
+    <div id="tigrinho-grid"></div>
+    <p id="resultado"></p>
 
-  <div class="legenda">
-    ⭐⭐⭐ = x3<br>
-    💎💎💎 = x10<br>
-    Qualquer 3 iguais na vertical, horizontal ou diagonal = prêmio!
-  </div>
+    <div class="legenda">
+        ⭐⭐⭐ = x3<br>
+        💎💎💎 = x10<br>
+        🐯🐯🐯 = x5<br>
+        Qualquer 3 iguais na vertical, horizontal ou diagonal = prêmio!
+    </div>
 
-  <script>
-    let saldo = localStorage.getItem('saldoSlot') ? parseFloat(localStorage.getItem('saldoSlot')) : 100.00;
-    const simbolos = ['🐯', '🍒', '🔔', '⭐', '💎', '🍀', '🪙'];
-    const linhas = 3;
-    const colunas = 3;
-    let autoPlayAtivo = false;
+    <footer>
+        <p>Este site é um simulador educacional (TCC). Não utilize valores reais.</p>
+        <p id="commit-version">Versão: carregando...</p>
+    </footer>
 
-    function salvarSaldo() {
-      localStorage.setItem('saldoSlot', saldo.toFixed(2));
-    }
+    <script>
+        // Variáveis globais
+        let saldo = parseFloat(localStorage.getItem('saldo')) || 100.00;
+        let valorAposta = 0;
+        let jogoAtivo = false;
+        let autoPlayAtivo = false;
+        let animacaoAtiva = false;
+        const simbolos = ['🐯', '🍒', '🔔', '⭐', '💎', '🍀', '🪙'];
+        const multiplicadores = {
+            '🐯🐯🐯': 5,
+            '💎💎💎': 10,
+            '⭐⭐⭐': 3,
+            '🔔🔔🔔': 2,
+            '🍒🍒🍒': 2,
+            '🍀🍀🍀': 2,
+            '🪙🪙🪙': 2
+        };
 
-    function adicionarSaldo(valor) {
-      saldo += valor;
-      salvarSaldo();
-      atualizarInterface();
-    }
+        // Inicialização do jogo
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSaldo();
+            carregarVersao();
+            criarGrid();
+            document.getElementById('valorAposta').addEventListener('change', validarAposta);
+        });
 
-    function criarGridVisual() {
-      const container = document.getElementById('slotGrid');
-      for (let i = 0; i < linhas * colunas; i++) {
-        const div = document.createElement('div');
-        div.className = 'slot';
-        div.id = 'slot' + i;
-        container.appendChild(div);
-      }
-    }
-
-    function atualizarInterface() {
-      document.getElementById('saldo').textContent = saldo.toFixed(2);
-    }
-
-    function soltarConfetes() {
-      for (let i = 0; i < 50; i++) {
-        const confete = document.createElement('div');
-        confete.classList.add('confete');
-        confete.textContent = '🎉';
-        confete.style.left = Math.random() * 100 + 'vw';
-        document.body.appendChild(confete);
-        setTimeout(() => confete.remove(), 3000);
-      }
-    }
-
-    function toggleAutoPlay() {
-      autoPlayAtivo = !autoPlayAtivo;
-      document.getElementById('autoPlayBtn').textContent = autoPlayAtivo ? 'Desativar Auto' : 'Ativar Auto';
-      if (autoPlayAtivo) autoPlay();
-    }
-
-    function autoPlay() {
-      if (!autoPlayAtivo) return;
-      girarSlot(true);
-      setTimeout(autoPlay, 3000);
-    }
-
-    function girarSlot(auto = false) {
-      const aposta = parseFloat(document.getElementById('valorAposta').value);
-      const resultado = document.getElementById('resultado');
-      resultado.textContent = '';
-
-      if (isNaN(aposta) || aposta <= 0 || aposta > saldo) {
-        resultado.textContent = 'Aposta inválida ou saldo insuficiente!';
-        autoPlayAtivo = false;
-        document.getElementById('autoPlayBtn').textContent = 'Ativar Auto';
-        return;
-      }
-
-      saldo -= aposta;
-      salvarSaldo();
-      atualizarInterface();
-
-      let count = 0;
-      const totalSlots = linhas * colunas;
-      const animacao = setInterval(() => {
-        for (let i = 0; i < totalSlots; i++) {
-          document.getElementById('slot' + i).textContent = simbolos[Math.floor(Math.random() * simbolos.length)];
+        function carregarVersao() {
+            document.getElementById('commit-version').textContent = 'Versão: tigrinho-1.0';
         }
-        count++;
-        if (count > 15) {
-          clearInterval(animacao);
-          definirResultadoFinal(aposta);
+
+        function validarAposta() {
+            const input = document.getElementById('valorAposta');
+            if (input.value < 0.10) input.value = 0.10;
+            if (input.value > 10000) input.value = 10000;
+            input.value = parseFloat(input.value).toFixed(2);
         }
-      }, 100);
-    }
 
-    function definirResultadoFinal(aposta) {
-      let grid = [];
-      for (let l = 0; l < linhas; l++) {
-        grid[l] = [];
-        for (let c = 0; c < colunas; c++) {
-          const simbolo = simbolos[Math.floor(Math.random() * simbolos.length)];
-          grid[l][c] = simbolo;
-          document.getElementById('slot' + (l * colunas + c)).textContent = simbolo;
+        function updateSaldo() {
+            document.getElementById('saldo-value').textContent = saldo.toFixed(2);
+            localStorage.setItem('saldo', saldo);
         }
-      }
 
-      let multiplicador = 0;
+        function criarGrid() {
+            const grid = document.getElementById('tigrinho-grid');
+            grid.innerHTML = '';
+            
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.dataset.position = i;
+                grid.appendChild(cell);
+            }
+        }
 
-      for (let i = 0; i < linhas; i++) {
-        if (grid[i][0] === grid[i][1] && grid[i][1] === grid[i][2]) multiplicador += 3;
-      }
-      for (let j = 0; j < colunas; j++) {
-        if (grid[0][j] === grid[1][j] && grid[1][j] === grid[2][j]) multiplicador += 3;
-      }
-      if (grid[0][0] === grid[1][1] && grid[1][1] === grid[2][2]) multiplicador += 3;
-      if (grid[0][2] === grid[1][1] && grid[1][1] === grid[2][0]) multiplicador += 3;
+        function soltarConfetes() {
+            for (let i = 0; i < 50; i++) {
+                const confete = document.createElement('div');
+                confete.classList.add('confete');
+                confete.textContent = '🎉';
+                confete.style.left = Math.random() * 100 + 'vw';
+                document.body.appendChild(confete);
+                setTimeout(() => confete.remove(), 3000);
+            }
+        }
 
-      const resultado = document.getElementById('resultado');
-      if (multiplicador > 0) {
-        const ganho = aposta * multiplicador;
-        saldo += ganho;
-        resultado.textContent = `Você ganhou R$ ${ganho.toFixed(2)}! 🎉`;
-        soltarConfetes();
-      } else {
-        resultado.textContent = 'Não foi dessa vez 😢';
-      }
+        function toggleAutoPlay() {
+            autoPlayAtivo = !autoPlayAtivo;
+            document.getElementById('autoBtn').textContent = autoPlayAtivo ? 'Desativar Auto' : 'Ativar Auto';
+            if (autoPlayAtivo) autoPlay();
+        }
 
-      salvarSaldo();
-      document.getElementById('multiplicador').textContent = multiplicador + 'x';
-      atualizarInterface();
-    }
+        function autoPlay() {
+            if (!autoPlayAtivo) return;
+            iniciarJogo();
+            setTimeout(autoPlay, 3000);
+        }
 
-    criarGridVisual();
-    atualizarInterface();
-  </script>
+        function iniciarJogo() {
+            if (jogoAtivo || animacaoAtiva) return;
+            
+            valorAposta = parseFloat(document.getElementById('valorAposta').value);
+            
+            if (isNaN(valorAposta) {
+                mostrarResultado('Por favor, insira um valor válido para a aposta!', 'error');
+                return;
+            }
+
+            if (valorAposta < 0.10) {
+                mostrarResultado('O valor mínimo da aposta é R$ 0.10!', 'error');
+                return;
+            }
+
+            if (valorAposta > saldo) {
+                mostrarResultado('Saldo insuficiente para esta aposta!', 'error');
+                return;
+            }
+
+            saldo -= valorAposta;
+            updateSaldo();
+            jogoAtivo = true;
+            animacaoAtiva = true;
+            
+            // Animação de giro
+            let count = 0;
+            const cells = document.querySelectorAll('#tigrinho-grid .cell');
+            const animacao = setInterval(() => {
+                cells.forEach(cell => {
+                    cell.textContent = simbolos[Math.floor(Math.random() * simbolos.length)];
+                });
+                count++;
+                if (count > 15) {
+                    clearInterval(animacao);
+                    animacaoAtiva = false;
+                    definirResultado();
+                }
+            }, 100);
+        }
+
+        function definirResultado() {
+            const cells = document.querySelectorAll('#tigrinho-grid .cell');
+            const grid = [
+                [cells[0].textContent, cells[1].textContent, cells[2].textContent],
+                [cells[3].textContent, cells[4].textContent, cells[5].textContent],
+                [cells[6].textContent, cells[7].textContent, cells[8].textContent]
+            ];
+            
+            let multiplicadorTotal = 0;
+            
+            // Verificar linhas
+            for (let i = 0; i < 3; i++) {
+                const combinacao = grid[i][0] + grid[i][1] + grid[i][2];
+                if (multiplicadores[combinacao]) {
+                    multiplicadorTotal += multiplicadores[combinacao];
+                }
+            }
+            
+            // Verificar colunas
+            for (let j = 0; j < 3; j++) {
+                const combinacao = grid[0][j] + grid[1][j] + grid[2][j];
+                if (multiplicadores[combinacao]) {
+                    multiplicadorTotal += multiplicadores[combinacao];
+                }
+            }
+            
+            // Verificar diagonais
+            const diag1 = grid[0][0] + grid[1][1] + grid[2][2];
+            const diag2 = grid[0][2] + grid[1][1] + grid[2][0];
+            
+            if (multiplicadores[diag1]) multiplicadorTotal += multiplicadores[diag1];
+            if (multiplicadores[diag2]) multiplicadorTotal += multiplicadores[diag2];
+            
+            // Atualizar interface
+            document.getElementById('multiplicador').textContent = multiplicadorTotal + 'x';
+            
+            if (multiplicadorTotal > 0) {
+                const ganho = valorAposta * multiplicadorTotal;
+                saldo += ganho;
+                document.getElementById('ganho').textContent = ganho.toFixed(2);
+                mostrarResultado(`Você ganhou R$ ${ganho.toFixed(2)}! 🎉`, 'win');
+                soltarConfetes();
+            } else {
+                document.getElementById('ganho').textContent = '0.00';
+                mostrarResultado('Não foi dessa vez! Tente novamente.', 'lose');
+            }
+            
+            updateSaldo();
+            jogoAtivo = false;
+        }
+
+        function mostrarResultado(mensagem, tipo) {
+            const elemento = document.getElementById('resultado');
+            elemento.textContent = mensagem;
+            elemento.className = '';
+
+            if (tipo === 'win') {
+                elemento.classList.add('win-message');
+            } else if (tipo === 'lose') {
+                elemento.classList.add('lose-message');
+            } else if (tipo === 'error') {
+                elemento.style.color = '#ff9800';
+            }
+        }
+    </script>
 </body>
 
 </html>
