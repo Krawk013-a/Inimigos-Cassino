@@ -167,7 +167,7 @@
 
     <div id="controls">
         <input type="number" id="valorAposta" placeholder="Valor (R$)" min="1" step="0.01">
-        <input type="number" id="numBombas" placeholder="Nº de bombas (1-25)" min="1" max="25" value="1">
+        <input type="number" id="numBombas" placeholder="Nº de bombas (1-24)" min="1" max="24" value="1">
         <button onclick="iniciarJogo()">Jogar</button>
         <button id="pararBtn" onclick="pararJogo()" disabled>Sacar</button>
     </div>
@@ -226,14 +226,14 @@
         function validarAposta() {
             const input = document.getElementById('valorAposta');
             if (input.value < 0.01) input.value = 0.01;
-            if (input.value > 10000) input.value = 10000;
+            if (input.value > 10000000) input.value = 10000000;
             input.value = parseFloat(input.value).toFixed(2);
         }
 
         function validarNumBombas() {
             const input = document.getElementById('numBombas');
             if (input.value < 1) input.value = 1;
-            if (input.value > 25) input.value = 25;
+            if (input.value > 24) input.value = 24;
         }
 
         function updateSaldo() {
@@ -269,8 +269,8 @@
                 return;
             }
 
-            if (numBombas < 1 || numBombas > 25) {
-                mostrarResultado('Por favor, selecione entre 1 e 25 bombas!', 'error');
+            if (numBombas < 1 || numBombas > 24) {
+                mostrarResultado('Por favor, selecione entre 1 e 24 bombas!', 'error');
                 return;
             }
 
