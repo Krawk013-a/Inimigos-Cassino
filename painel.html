@@ -169,7 +169,7 @@
                     <div>Saldo disponível</div>
                     <div class="saldo-valor" id="saldo-display">R$ 0,00</div>
                 </div>
-                <button onclick="resgatarSaldo()">Resgatar R$100</button>
+                <button id="btnResgatar">Resgatar R$100</button>
             </div>
         </div>
         
@@ -220,7 +220,8 @@
                 saldo: 'cassino_saldo_v2',
                 extrato: 'cassino_extrato_v2',
                 hash: 'cassino_hash_v2',
-                user: 'cassino_user'
+                user: 'cassino_user',
+                ultimoResgate: 'cassino_ultimo_resgate'
             };
             
             // Dados privados
@@ -342,11 +343,11 @@
                 claimDailyBonus: function() {
                     try {
                         const today = new Date().toLocaleDateString();
-                        const lastClaim = localStorage.getItem('last_bonus_claim');
+                        const lastClaim = localStorage.getItem(STORAGE_KEYS.ultimoResgate);
                         
                         if (lastClaim !== today) {
                             if (this.deposit(100, "Resgate diário")) {
-                                localStorage.setItem('last_bonus_claim', today);
+                                localStorage.setItem(STORAGE_KEYS.ultimoResgate, today);
                                 return true;
                             }
                         }
@@ -464,6 +465,9 @@
                 updateBalanceDisplay();
                 loadStatement();
                 
+                // Configura o botão de resgate
+                document.getElementById('btnResgatar').addEventListener('click', claimDailyBonus);
+                
                 // Verificação periódica de segurança
                 setInterval(() => {
                     SecureBank.getBalance(); // Verifica integridade
@@ -476,36 +480,6 @@
 
         // Inicia quando o DOM estiver pronto
         document.addEventListener('DOMContentLoaded', initialize);
-
-        // Proteção contra manipulação direta do localStorage
-        (function() {
-            const protectedKeys = [
-                'cassino_saldo_v2',
-                'cassino_extrato_v2',
-                'cassino_hash_v2',
-                'last_bonus_claim'
-            ];
-            
-            const originalLocalStorage = window.localStorage;
-            
-            Object.defineProperty(window, 'localStorage', {
-                get: function() {
-                    return new Proxy(originalLocalStorage, {
-                        get: function(target, prop) {
-                            return target[prop];
-                        },
-                        set: function(target, prop, value) {
-                            if (protectedKeys.includes(prop.toString())) {
-                                console.warn(`Tentativa de alteração bloqueada: ${prop}`);
-                                return false;
-                            }
-                            target[prop] = value;
-                            return true;
-                        }
-                    });
-                }
-            });
-        })();
     </script>
 </body>
 </html>
