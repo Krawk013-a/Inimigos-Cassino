@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,7 +14,7 @@
             --cor-positivo: #4CAF50;
             --cor-negativo: #F44336;
         }
-        
+
         body {
             font-family: 'Arial', sans-serif;
             background-color: var(--cor-fundo);
@@ -22,38 +23,38 @@
             padding: 20px;
             text-align: center;
         }
-        
+
         .container {
             max-width: 800px;
             margin: 0 auto;
         }
-        
+
         .card {
             background-color: var(--cor-painel);
             border-radius: 10px;
             padding: 20px;
             margin-bottom: 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
         }
-        
+
         h1 {
             color: var(--cor-primaria);
             margin-top: 0;
         }
-        
+
         .saldo-container {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
         }
-        
+
         .saldo-valor {
             font-size: 1.5em;
             font-weight: bold;
             color: var(--cor-primaria);
         }
-        
+
         button {
             background-color: var(--cor-primaria);
             color: black;
@@ -65,17 +66,17 @@
             transition: all 0.2s;
             margin: 5px;
         }
-        
+
         button:hover {
             transform: scale(1.05);
         }
-        
+
         button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
             transform: none !important;
         }
-        
+
         #pista-corrida {
             margin: 30px 0;
             position: relative;
@@ -83,12 +84,12 @@
             overflow: hidden;
             border-radius: 10px;
             background-color: #2a2a2a;
-            background-image: 
+            background-image:
                 linear-gradient(to right, #333 1px, transparent 1px),
                 linear-gradient(to bottom, #333 1px, transparent 1px);
             background-size: 20px 20px;
         }
-        
+
         .cavalo {
             position: absolute;
             left: 20px;
@@ -99,19 +100,19 @@
             display: flex;
             align-items: center;
         }
-        
+
         .cavalo::after {
             content: '🐎';
             margin-left: 5px;
         }
-        
+
         .nome-cavalo {
             position: absolute;
             left: 70px;
             white-space: nowrap;
             font-weight: bold;
         }
-        
+
         .linha-chegada {
             position: absolute;
             right: 20px;
@@ -120,7 +121,7 @@
             width: 2px;
             background-color: var(--cor-primaria);
         }
-        
+
         .linha-chegada::after {
             content: 'CHEGADA';
             position: absolute;
@@ -130,7 +131,7 @@
             color: var(--cor-primaria);
             font-weight: bold;
         }
-        
+
         #controles-aposta {
             display: flex;
             flex-wrap: wrap;
@@ -138,7 +139,7 @@
             gap: 10px;
             margin-bottom: 20px;
         }
-        
+
         .cavalo-aposta {
             background-color: #333;
             padding: 10px 15px;
@@ -147,22 +148,22 @@
             transition: all 0.2s;
             border-left: 4px solid var(--cor-primaria);
         }
-        
+
         .cavalo-aposta:hover {
             background-color: #444;
         }
-        
+
         .cavalo-aposta.selecionado {
             background-color: var(--cor-primaria);
             color: black;
             font-weight: bold;
         }
-        
+
         .cavalo-aposta.vencedor {
             background-color: var(--cor-positivo);
             color: white;
         }
-        
+
         input {
             background-color: #333;
             color: white;
@@ -173,7 +174,7 @@
             width: 100px;
             text-align: center;
         }
-        
+
         #resultado-corrida {
             font-size: 1.2em;
             margin: 20px 0;
@@ -182,16 +183,16 @@
             align-items: center;
             justify-content: center;
         }
-        
+
         .ganho {
             color: var(--cor-positivo);
             font-weight: bold;
         }
-        
+
         .perda {
             color: var(--cor-negativo);
         }
-        
+
         #historico-corridas {
             margin-top: 20px;
             max-height: 200px;
@@ -201,15 +202,16 @@
             background-color: #333;
             border-radius: 5px;
         }
-        
+
         .item-historico {
             padding: 5px 0;
             border-bottom: 1px solid #444;
         }
-        
+
         .item-historico:last-child {
             border-bottom: none;
         }
+
         .velocidade {
             position: absolute;
             top: 35px;
@@ -219,11 +221,12 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="card">
             <h1>🏇 Corrida de Cavalos</h1>
-            
+
             <div class="saldo-container">
                 <div>
                     <div>Saldo disponível</div>
@@ -232,7 +235,7 @@
                 <button onclick="voltarParaHome()">Voltar</button>
             </div>
         </div>
-        
+
         <div class="card">
             <div id="controles-aposta">
                 <div class="cavalo-aposta" data-cavalo="1" onclick="selecionarCavalo(1)">
@@ -251,25 +254,25 @@
                     Cavalo 5 - Max Verstappen
                 </div>
             </div>
-            
+
             <div>
                 <input type="number" id="valor-aposta" placeholder="Valor (R$)" min="1" step="0.01">
                 <button id="btn-apostar" onclick="fazerAposta()" disabled>Apostar</button>
                 <button id="btn-corrida" onclick="iniciarCorrida()" disabled>Iniciar Corrida</button>
             </div>
         </div>
-        
+
         <div class="card">
             <div id="pista-corrida">
                 <div class="linha-chegada"></div>
                 <!-- Cavalos serão inseridos aqui -->
             </div>
-            
+
             <div id="resultado-corrida">
                 Selecione um cavalo e um valor para apostar
             </div>
         </div>
-        
+
         <div class="card">
             <h3>Últimas Corridas</h3>
             <div id="historico-corridas">
@@ -287,24 +290,24 @@
             4: { nome: "Alejado", odds: 3.5, cor: "#F033FF" },
             5: { nome: "Max Verstappen", odds: 3.0, cor: "#FF33F0" }
         };
-        
+
         // Variáveis do jogo
         let cavaloSelecionado = null;
         let valorAposta = 0;
         let corridaEmAndamento = false;
         let apostaFeita = false;
-        
+
         // Inicialização
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             updateSaldo();
             criarCavalosNaPista();
             carregarHistorico();
         });
-        
+
         function voltarParaHome() {
             window.location.href = 'painel.html';
         }
-        
+
         function updateSaldo() {
             const saldo = Number(localStorage.getItem('saldo')) || 0;
             document.getElementById('saldo-display').textContent = saldo.toLocaleString('pt-BR', {
@@ -312,88 +315,88 @@
                 currency: 'BRL'
             });
         }
-        
+
         function criarCavalosNaPista() {
             const pista = document.getElementById('pista-corrida');
             pista.innerHTML = '<div class="linha-chegada"></div>';
-            
+
             Object.keys(CAVALOS).forEach(num => {
                 const cavalo = document.createElement('div');
                 cavalo.className = 'cavalo';
                 cavalo.id = `cavalo-${num}`;
                 cavalo.style.top = `${(num * 50) - 30}px`;
                 cavalo.style.color = CAVALOS[num].cor;
-                
+
                 const nome = document.createElement('div');
                 nome.className = 'nome-cavalo';
                 nome.textContent = CAVALOS[num].nome;
-                
+
                 cavalo.appendChild(nome);
                 pista.appendChild(cavalo);
             });
         }
-        
+
         function selecionarCavalo(num) {
             if (corridaEmAndamento) return;
-            
+
             // Remove seleção anterior
             if (cavaloSelecionado) {
                 document.querySelector(`.cavalo-aposta[data-cavalo="${cavaloSelecionado}"]`)
                     .classList.remove('selecionado');
             }
-            
+
             cavaloSelecionado = num;
             document.querySelector(`.cavalo-aposta[data-cavalo="${num}"]`)
                 .classList.add('selecionado');
-            
+
             // Habilita botão de aposta se valor for válido
             const valorInput = document.getElementById('valor-aposta');
             if (valorInput.value && parseFloat(valorInput.value) > 0) {
                 document.getElementById('btn-apostar').disabled = false;
             }
-            
-            document.getElementById('resultado-corrida').textContent = 
+
+            document.getElementById('resultado-corrida').textContent =
                 `Apostando no ${CAVALOS[num].nome} (Odd: ${CAVALOS[num].odds.toFixed(1)}x)`;
         }
-        
+
         function fazerAposta() {
             const valorInput = document.getElementById('valor-aposta');
             valorAposta = parseFloat(valorInput.value);
             const saldoAtual = Number(localStorage.getItem('saldo')) || 0;
-            
+
             if (isNaN(valorAposta)) {
                 alert('Por favor, insira um valor válido para a aposta!');
                 return;
             }
-            
+
             if (valorAposta < 0.01) {
                 alert('O valor mínimo da aposta é R$ 0.01!');
                 return;
             }
-            
+
             if (valorAposta > saldoAtual) {
                 alert('Saldo insuficiente para esta aposta!');
                 return;
             }
-            
+
             if (!cavaloSelecionado) {
                 alert('Por favor, selecione um cavalo para apostar!');
                 return;
             }
-            
+
             // Registra a aposta (subtrai do saldo)
             registrarTransacao(`Aposta em ${CAVALOS[cavaloSelecionado].nome}`, -valorAposta);
-            
+
             apostaFeita = true;
             document.getElementById('btn-apostar').disabled = true;
             document.getElementById('btn-corrida').disabled = false;
             document.getElementById('valor-aposta').disabled = true;
-            
-            document.getElementById('resultado-corrida').innerHTML = 
+
+            document.getElementById('resultado-corrida').innerHTML =
                 `✅ Aposta de R$${valorAposta.toFixed(2)} no ${CAVALOS[cavaloSelecionado].nome}<br>` +
                 `Ganho potencial: R$${(valorAposta * CAVALOS[cavaloSelecionado].odds).toFixed(2)}`;
         }
-        
+
         function atualizarVelocidadeVisual(num, velocidade) {
             let cavalo = document.getElementById(`cavalo-${num}`);
             let vel = cavalo.querySelector(".velocidade");
@@ -465,45 +468,45 @@
                 if (corridaTerminada && vencedor) {
                     clearInterval(animacao);
                     corridaEmAndamento = false;
-                    exibirResultado(vencedor);
+                    finalizarCorrida(vencedor);  // Corrigido aqui
                 }
             }, 50);
         }
-        
+
         function finalizarCorrida(vencedor) {
             corridaEmAndamento = false;
             apostaFeita = false;
-            
+
             // Destacar vencedor
             document.querySelector(`.cavalo-aposta[data-cavalo="${vencedor}"]`)
                 .classList.add('vencedor');
-            
+
             // Verificar se o jogador ganhou
             if (vencedor == cavaloSelecionado) {
                 const ganhoBruto = valorAposta * CAVALOS[vencedor].odds;
                 finalizarJogoComVitoria(ganhoBruto, 'Corrida de Cavalos');
-                
-                document.getElementById('resultado-corrida').innerHTML = 
+
+                document.getElementById('resultado-corrida').innerHTML =
                     `<span class="ganho">🎉 ${CAVALOS[vencedor].nome} venceu! Você ganhou R$${ganhoBruto.toFixed(2)}</span>`;
             } else {
-                document.getElementById('resultado-corrida').innerHTML = 
+                document.getElementById('resultado-corrida').innerHTML =
                     `<span class="perda">😞 ${CAVALOS[vencedor].nome} venceu. Você perdeu R$${valorAposta.toFixed(2)}</span>`;
             }
-            
+
             // Resetar controles
             document.querySelector(`.cavalo-aposta[data-cavalo="${cavaloSelecionado}"]`)
                 .classList.remove('selecionado');
             cavaloSelecionado = null;
-            
+
             document.getElementById('valor-aposta').value = '';
             document.getElementById('valor-aposta').disabled = false;
             document.getElementById('btn-apostar').disabled = true;
             document.getElementById('btn-corrida').disabled = true;
-            
+
             // Adicionar ao histórico
             adicionarAoHistorico(vencedor);
         }
-        
+
         function adicionarAoHistorico(vencedor) {
             const historico = JSON.parse(localStorage.getItem('historicoCorridas')) || [];
             historico.unshift({
@@ -513,106 +516,106 @@
                 valorAposta: valorAposta,
                 ganhou: vencedor == cavaloSelecionado
             });
-            
+
             // Manter apenas as últimas 10 corridas
             if (historico.length > 10) historico.pop();
-            
+
             localStorage.setItem('historicoCorridas', JSON.stringify(historico));
             carregarHistorico();
         }
-        
+
         function carregarHistorico() {
             const historico = JSON.parse(localStorage.getItem('historicoCorridas')) || [];
             const container = document.getElementById('historico-corridas');
-            
+
             if (historico.length === 0) {
                 container.innerHTML = '<div class="item-historico">Nenhuma corrida registrada</div>';
                 return;
             }
-            
+
             container.innerHTML = '';
             historico.forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'item-historico';
-                
-                const resultado = item.ganhou ? 
-                    `<span class="ganho">GANHOU R$${(item.valorAposta * CAVALOS[Object.keys(CAVALOS).find(k => CAVALOS[k].nome === item.apostado)].odds).toFixed(2)}</span>` : 
+
+                const resultado = item.ganhou ?
+                    `<span class="ganho">GANHOU R$${(item.valorAposta * CAVALOS[Object.keys(CAVALOS).find(k => CAVALOS[k].nome === item.apostado)].odds).toFixed(2)}</span>` :
                     `<span class="perda">perdeu</span>`;
-                
+
                 div.innerHTML = `
                     <strong>${item.data}</strong><br>
                     Vencedor: ${item.vencedor}<br>
                     Aposta: ${item.apostado} (R$${item.valorAposta.toFixed(2)}) - ${resultado}
                 `;
-                
+
                 container.appendChild(div);
             });
         }
-        
+
         // Funções de transação (integração com o sistema existente)
         function registrarTransacao(descricao, valorBruto, isGanho = false) {
             const TAXA_APOSTAS = 0.125;
             let valorLiquido = valorBruto;
             let taxa = 0;
-            
+
             // Obtém o saldo atual e garante que é um número
             let saldoAtual = parseFloat(localStorage.getItem('saldo')) || 0;
-        
+
             // Aplica taxa sobre ganhos
             if (isGanho && valorBruto > 0) {
                 taxa = parseFloat((valorBruto * TAXA_APOSTAS).toFixed(2));
                 valorLiquido = parseFloat((valorBruto - taxa).toFixed(2));
-        
+
                 // Registra a taxa como transação separada
                 registrarTransacao(`Taxa sobre ${descricao.toLowerCase()}`, -taxa);
             }
-        
+
             // Atualiza saldo
             let novoSaldo = parseFloat((saldoAtual + valorLiquido).toFixed(2));
             localStorage.setItem('saldo', novoSaldo.toString());
-        
+
             // Adiciona ao extrato
             const extrato = JSON.parse(localStorage.getItem('extrato')) || [];
-            
+
             extrato.push({
                 data: new Date().toLocaleString('pt-BR'),
                 descricao: descricao,
                 valor: valorLiquido,
                 saldo: novoSaldo
             });
-        
+
             localStorage.setItem('extrato', JSON.stringify(extrato));
-        
+
             // Atualiza a tela
             updateSaldo();
-        
+
             return {
                 liquido: valorLiquido,
                 taxa: taxa
             };
         }
-        
+
         function finalizarJogoComVitoria(ganhoBruto, nomeJogo) {
             const resultado = registrarTransacao(`Ganho no ${nomeJogo}`, ganhoBruto, true);
-            
+
             const mensagem = `🎉 Você ganhou R$${ganhoBruto.toFixed(2)}!\n` +
-                             `(Taxa de 12.5%: -R$${resultado.taxa.toFixed(2)})\n` +
-                             `Valor creditado: R$${resultado.liquido.toFixed(2)}`;
-            
+                `(Taxa de 12.5%: -R$${resultado.taxa.toFixed(2)})\n` +
+                `Valor creditado: R$${resultado.liquido.toFixed(2)}`;
+
             // Atualiza a mensagem de resultado
             const resultadoElement = document.getElementById('resultado-corrida');
             if (resultadoElement) {
-                resultadoElement.innerHTML = 
+                resultadoElement.innerHTML =
                     `🎉 ${nomeJogo}: Ganho de R$${resultado.liquido.toFixed(2)}<br>` +
                     `<small>Taxa de 12.5%: R$${resultado.taxa.toFixed(2)}</small>`;
                 resultadoElement.className = 'ganho';
             }
-            
+
             updateSaldo();
         }
-        
+
         // Atualiza botão de aposta quando valor é alterado
-        document.getElementById('valor-aposta').addEventListener('input', function() {
+        document.getElementById('valor-aposta').addEventListener('input', function () {
             const valor = parseFloat(this.value);
             if (valor && valor > 0 && cavaloSelecionado) {
                 document.getElementById('btn-apostar').disabled = false;
@@ -622,4 +625,5 @@
         });
     </script>
 </body>
+
 </html>
