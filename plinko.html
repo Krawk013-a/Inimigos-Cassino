@@ -100,11 +100,12 @@
         
         .pino {
             position: absolute;
-            width: 8px;
-            height: 8px;
+            width: 10px;
+            height: 10px;
             background-color: var(--cor-primaria);
             border-radius: 50%;
             transform: translate(-50%, -50%);
+            box-shadow: 0 0 5px rgba(255, 204, 0, 0.7);
         }
         
         .bolinha {
@@ -115,20 +116,22 @@
             border-radius: 50%;
             transform: translate(-50%, -50%);
             z-index: 10;
-            box-shadow: 0 0 5px rgba(255, 87, 34, 0.7);
+            box-shadow: 0 0 8px rgba(255, 87, 34, 0.9);
+            transition: left 0.05s linear, top 0.05s linear;
         }
         
         .caixa-multiplicador {
             position: absolute;
             bottom: 0;
             width: calc(100% / 9);
-            height: 40px;
+            height: 50px;
             display: flex;
             justify-content: center;
             align-items: center;
             font-weight: bold;
             color: white;
-            border-top: 2px solid rgba(255, 255, 255, 0.1);
+            border-top: 2px solid rgba(255, 255, 255, 0.2);
+            font-size: 14px;
         }
         
         #info-panel {
@@ -157,14 +160,34 @@
             min-height: 24px;
             font-size: 18px;
             margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: rgba(30, 30, 30, 0.7);
         }
         
         .ganho {
             color: var(--cor-ganho);
+            animation: pulse 0.5s 2;
         }
         
         .perda {
             color: #f44336;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .trajetoria {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background-color: rgba(255, 87, 34, 0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
         }
     </style>
 </head>
@@ -203,11 +226,11 @@
         let jogoEmAndamento = false;
         let dificuldade = 12;
         
-        // Configurações
+        // Configurações balanceadas
         const MULTIPLICADORES_BASE = {
-            8: [0.2, 0.4, 1, 3, 1, 0.4, 0.2],  // Fácil
-            12: [0.1, 0.3, 0.8, 2, 5, 2, 0.8, 0.3, 0.1],  // Médio
-            16: [0.05, 0.2, 0.5, 1.5, 4, 10, 4, 1.5, 0.5, 0.2, 0.05]  // Difícil
+            8: [0.4, 0.6, 1.2, 2.5, 1.2, 0.6, 0.4],  // Fácil - mais chances de ganhar
+            12: [0.2, 0.4, 0.8, 1.5, 3, 1.5, 0.8, 0.4, 0.2],  // Médio
+            16: [0.1, 0.3, 0.6, 1.2, 2, 5, 2, 1.2, 0.6, 0.3, 0.1]  // Difícil - mais risco
         };
         
         // Elementos DOM
@@ -230,11 +253,17 @@
                 dificuldade = parseInt(selectDificuldade.value);
                 criarTabuleiro();
             });
+            
+            // Redimensiona o tabuleiro quando a janela muda de tamanho
+            window.addEventListener('resize', criarTabuleiro);
         });
         
         // Atualiza o saldo na tela
         function updateSaldo() {
-            document.getElementById('saldo-value').textContent = saldo.toFixed(2);
+            document.getElementById('saldo-value').textContent = saldo.toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            });
             localStorage.setItem('saldo', saldo);
         }
         
@@ -252,7 +281,7 @@
             multiplicadores = MULTIPLICADORES_BASE[dificuldade];
             
             const largura = plinkoBoard.clientWidth;
-            const altura = plinkoBoard.clientHeight - 40; // Desconta altura das caixas
+            const altura = plinkoBoard.clientHeight - 50; // Desconta altura das caixas
             
             const espacamentoHorizontal = largura / (multiplicadores.length + 1);
             const espacamentoVertical = altura / dificuldade;
@@ -272,12 +301,20 @@
             }
             
             // Cria caixas de multiplicador na base
+            const larguraCaixa = largura / multiplicadores.length;
             for (let i = 0; i < multiplicadores.length; i++) {
                 const caixa = document.createElement('div');
                 caixa.className = 'caixa-multiplicador';
-                caixa.style.left = `${i * (largura / multiplicadores.length)}px`;
+                caixa.style.left = `${i * larguraCaixa}px`;
+                caixa.style.width = `${larguraCaixa}px`;
                 caixa.textContent = `${multiplicadores[i]}x`;
-                caixa.style.backgroundColor = `rgba(255, 204, 0, ${0.1 + (multiplicadores[i] / Math.max(...multiplicadores) * 0.4)})`;
+                
+                // Cor baseada no valor do multiplicador
+                const intensidade = 0.1 + (multiplicadores[i] / Math.max(...multiplicadores) * 0.6);
+                caixa.style.backgroundColor = `rgba(255, 204, 0, ${intensidade})`;
+                caixa.dataset.multiplicador = multiplicadores[i];
+                caixa.dataset.index = i;
+                
                 plinkoBoard.appendChild(caixa);
             }
         }
@@ -305,7 +342,10 @@
             
             // Deduz a aposta
             registrarTransacao("Aposta no Plinko", -valorAposta);
-            document.getElementById('aposta-value').textContent = valorAposta.toFixed(2);
+            document.getElementById('aposta-value').textContent = valorAposta.toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            });
             document.getElementById('resultado').textContent = '';
             
             jogoEmAndamento = true;
@@ -318,14 +358,18 @@
             bolinha.style.top = '30px';
             plinkoBoard.appendChild(bolinha);
             
-            // Configurações da física
+            // Configurações da física melhorada
             let x = plinkoBoard.clientWidth / 2;
             let y = 30;
-            let velocidadeX = (Math.random() - 0.5) * 2;
-            let velocidadeY = 1;
-            const gravidade = 0.05;
-            const atrito = 0.99;
-            const forcaPino = 0.5;
+            let velocidadeX = (Math.random() - 0.5) * 1.5; // Velocidade inicial mais suave
+            let velocidadeY = 0.5;
+            const gravidade = 0.1;
+            const atrito = 0.98; // Pouco atrito
+            const elasticidade = 0.85; // Coeficiente de restituição
+            
+            // Para debug: mostrar trajetória
+            let trajetoria = [];
+            const mostrarTrajetoria = false;
             
             const animacao = setInterval(() => {
                 // Aplica gravidade
@@ -337,30 +381,50 @@
                 bolinha.style.left = `${x}px`;
                 bolinha.style.top = `${y}px`;
                 
+                if (mostrarTrajetoria) {
+                    const ponto = document.createElement('div');
+                    ponto.className = 'trajetoria';
+                    ponto.style.left = `${x}px`;
+                    ponto.style.top = `${y}px`;
+                    plinkoBoard.appendChild(ponto);
+                    trajetoria.push(ponto);
+                }
+                
                 // Verifica colisão com pinos
                 const pinos = document.querySelectorAll('.pino');
+                let colidiu = false;
+                
                 pinos.forEach(pino => {
-                    const rectPino = pino.getBoundingClientRect();
-                    const rectBolinha = bolinha.getBoundingClientRect();
+                    const pinoX = parseFloat(pino.style.left);
+                    const pinoY = parseFloat(pino.style.top);
                     
-                    const distancia = Math.sqrt(
-                        Math.pow(rectBolinha.left + 8 - (rectPino.left + 4), 2) +
-                        Math.pow(rectBolinha.top + 8 - (rectPino.top + 4), 2)
-                    );
+                    // Distância entre bolinha e pino
+                    const dx = x - pinoX;
+                    const dy = y - pinoY;
+                    const distancia = Math.sqrt(dx * dx + dy * dy);
                     
-                    if (distancia < 12) { // Raio da bolinha + raio do pino
-                        // Calcula ângulo de colisão
-                        const angulo = Math.atan2(
-                            (rectBolinha.top + 8) - (rectPino.top + 4),
-                            (rectBolinha.left + 8) - (rectPino.left + 4)
-                        );
+                    // Raio da bolinha (8) + raio do pino (5)
+                    if (distancia < 13 && !colidiu) {
+                        colidiu = true;
                         
-                        // Aplica força de ricochete
-                        velocidadeX = Math.cos(angulo) * forcaPino;
-                        velocidadeY = Math.sin(angulo) * forcaPino;
+                        // Normal do ponto de colisão
+                        const nx = dx / distancia;
+                        const ny = dy / distancia;
                         
-                        // Aplica pequena variação aleatória
-                        velocidadeX += (Math.random() - 0.5) * 0.3;
+                        // Produto escalar da velocidade com a normal
+                        const produtoEscalar = velocidadeX * nx + velocidadeY * ny;
+                        
+                        // Aplica força de ricochete com conservação de energia
+                        velocidadeX = (velocidadeX - 2 * produtoEscalar * nx) * elasticidade;
+                        velocidadeY = (velocidadeY - 2 * produtoEscalar * ny) * elasticidade;
+                        
+                        // Pequena variação aleatória para mais realismo
+                        velocidadeX += (Math.random() - 0.5) * 0.2;
+                        
+                        // Ajusta posição para evitar colisões múltiplas
+                        const overlap = 13 - distancia;
+                        x += nx * overlap * 0.5;
+                        y += ny * overlap * 0.5;
                     }
                 });
                 
@@ -373,16 +437,28 @@
                 // Verifica se chegou na base
                 if (y > plinkoBoard.clientHeight - 30) {
                     clearInterval(animacao);
+                    
+                    // Remove pontos de trajetória
+                    if (mostrarTrajetoria) {
+                        trajetoria.forEach(p => p.remove());
+                    }
+                    
                     bolinha.remove();
                     bolinhasAtivas--;
                     
                     // Determina em qual caixa caiu
                     const caixas = document.querySelectorAll('.caixa-multiplicador');
                     let caixaIndex = -1;
+                    let menorDistancia = Infinity;
                     
+                    // Verifica qual caixa está mais próxima do centro da bolinha
                     caixas.forEach((caixa, index) => {
                         const rect = caixa.getBoundingClientRect();
-                        if (x >= rect.left && x <= rect.right) {
+                        const centroCaixa = rect.left + rect.width / 2;
+                        const distancia = Math.abs(x - centroCaixa);
+                        
+                        if (distancia < menorDistancia) {
+                            menorDistancia = distancia;
                             caixaIndex = index;
                         }
                     });
@@ -392,8 +468,12 @@
                         const ganho = valorAposta * multiplicador;
                         
                         // Efeito visual na caixa
-                        caixas[caixaIndex].style.boxShadow = '0 0 15px rgba(255, 255, 255, 0.7)';
+                        caixas[caixaIndex].style.transform = 'scale(1.05)';
+                        caixas[caixaIndex].style.boxShadow = '0 0 20px rgba(255, 255, 255, 0.9)';
+                        caixas[caixaIndex].style.transition = 'all 0.3s';
+                        
                         setTimeout(() => {
+                            caixas[caixaIndex].style.transform = 'scale(1)';
                             caixas[caixaIndex].style.boxShadow = 'none';
                         }, 500);
                         
@@ -420,7 +500,7 @@
                 } else if (executadas >= vezes && bolinhasAtivas === 0) {
                     clearInterval(intervalo);
                 }
-            }, 800);
+            }, 1000); // Intervalo maior para melhor visualização
         }
         
         // Finaliza o jogo com vitória
@@ -431,10 +511,21 @@
             
             registrarTransacao(`Ganho no Plinko (${multiplicador}x)`, ganhoBruto, true);
             
+            // Atualiza o display de ganho
+            document.getElementById('ganho-value').textContent = ganhoLiquido.toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            });
+            
             resultadoElement.innerHTML = 
-                `🎉 Multiplicador: ${multiplicador}x | Ganho: R$${ganhoLiquido.toFixed(2)}<br>` +
-                `<small>Taxa de 12.5%: R$${taxa.toFixed(2)}</small>`;
+                `🎉 Multiplicador: <strong>${multiplicador}x</strong> | ` +
+                `Ganho: <strong>${ganhoLiquido.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}</strong><br>` +
+                `<small>Taxa de 12.5%: ${taxa.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}</small>`;
             resultadoElement.className = 'ganho';
+            
+            // Atualiza saldo e controles
+            updateSaldo();
+            validarAposta();
         }
         
         // Registra transações
@@ -462,8 +553,6 @@
             
             localStorage.setItem('extrato', JSON.stringify(extrato));
             localStorage.setItem('saldo', saldo);
-            updateSaldo();
-            validarAposta();
         }
     </script>
 </body>
