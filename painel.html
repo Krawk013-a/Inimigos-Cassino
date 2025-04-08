@@ -213,129 +213,216 @@
     </div>
 
     <script>
-        // Taxa sobre ganhos (12.5%)
-        const TAXA_APOSTAS = 0.125;
-        
-        // Carrega dados ao iniciar
-        document.addEventListener('DOMContentLoaded', function() {
-            const username = localStorage.getItem('user') || 'Usuário';
-            document.getElementById('username').textContent = username;
+        // Sistema Bancário Protegido
+        const gameBank = (function() {
+            // Variáveis privadas - não podem ser acessadas diretamente
+            let _saldo = Number(localStorage.getItem('saldoSeguro')) || 0;
+            let _extrato = JSON.parse(localStorage.getItem('extratoSeguro')) || [];
+            const _senhaSecreta = 'cassino@' + Math.random().toString(36).slice(2, 9);
             
-            updateSaldo();
-            carregarExtrato();
-        });
-        
-        // Atualiza o saldo na tela
-        function updateSaldo() {
-            const saldo = Number(localStorage.getItem('saldo')) || 0;
-            document.getElementById('saldo-display').textContent = saldo.toLocaleString('pt-BR', {
-                style: 'currency',
-                currency: 'BRL'
-            });
+            // Gera um hash de verificação único
+            function _gerarHash(valor) {
+                return btoa(JSON.stringify({
+                    valor: valor,
+                    chave: _senhaSecreta,
+                    dia: new Date().getDate()
+                }));
+            }
+            
+            // Verifica se os dados foram adulterados
+            function _verificarIntegridade() {
+                const hashSalvo = localStorage.getItem('hashSaldo');
+                const hashAtual = _gerarHash(_saldo);
+                
+                if (hashSalvo !== hashAtual) {
+                    console.warn('Integridade comprometida! Restaurando valores...');
+                    _saldo = 0;
+                    _extrato = [];
+                    _salvarDados();
+                }
+            }
+            
+            // Salva os dados com verificação de integridade
+            function _salvarDados() {
+                localStorage.setItem('saldoSeguro', _saldo);
+                localStorage.setItem('extratoSeguro', JSON.stringify(_extrato));
+                localStorage.setItem('hashSaldo', _gerarHash(_saldo));
+            }
+            
+            // Interface pública
+            return {
+                getSaldo: function() {
+                    _verificarIntegridade();
+                    return _saldo;
+                },
+                
+                depositar: function(valor, descricao = "Depósito") {
+                    if (valor <= 0) return false;
+                    
+                    _saldo += valor;
+                    _extrato.push({
+                        data: new Date().toISOString(),
+                        descricao: descricao,
+                        valor: valor,
+                        saldo: _saldo
+                    });
+                    
+                    _salvarDados();
+                    return true;
+                },
+                
+                sacar: function(valor, descricao = "Saque") {
+                    if (valor <= 0 || valor > _saldo) return false;
+                    
+                    _saldo -= valor;
+                    _extrato.push({
+                        data: new Date().toISOString(),
+                        descricao: descricao,
+                        valor: -valor,
+                        saldo: _saldo
+                    });
+                    
+                    _salvarDados();
+                    return true;
+                },
+                
+                getExtrato: function() {
+                    return JSON.parse(JSON.stringify(_extrato));
+                },
+                
+                resgatarBonus: function() {
+                    const hoje = new Date().toLocaleDateString();
+                    const ultimoResgate = localStorage.getItem('ultimoResgate');
+                    
+                    if (ultimoResgate !== hoje) {
+                        this.depositar(100, "Resgate diário");
+                        localStorage.setItem('ultimoResgate', hoje);
+                        return true;
+                    }
+                    return false;
+                },
+                
+                // Para uso em outros jogos
+                transacionar: function(descricao, valorBruto, isGanho = false) {
+                    const TAXA = 0.125;
+                    let valorLiquido = valorBruto;
+                    let taxa = 0;
+                    
+                    if (isGanho && valorBruto > 0) {
+                        taxa = valorBruto * TAXA;
+                        valorLiquido = valorBruto - taxa;
+                        this.sacar(taxa, `Taxa sobre ${descricao.toLowerCase()}`);
+                    }
+                    
+                    if (valorBruto > 0) {
+                        this.depositar(valorLiquido, descricao);
+                    } else {
+                        this.sacar(-valorLiquido, descricao);
+                    }
+                    
+                    return {
+                        liquido: valorLiquido,
+                        taxa: taxa
+                    };
+                }
+            };
+        })();
+
+        // Atualiza a exibição do saldo
+        function atualizarSaldoDisplay() {
+            document.getElementById('saldo-display').textContent = 
+                gameBank.getSaldo().toLocaleString('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                });
         }
-        
-        // Carrega o extrato
+
+        // Carrega o extrato na tela
         function carregarExtrato() {
-            const extrato = JSON.parse(localStorage.getItem('extrato')) || [];
             const extratoContainer = document.getElementById('extrato');
             extratoContainer.innerHTML = '';
+            
+            const extrato = gameBank.getExtrato();
             
             if (extrato.length === 0) {
                 extratoContainer.innerHTML = '<p>Nenhuma transação registrada</p>';
                 return;
             }
             
-            // Ordena do mais recente para o mais antigo
-            extrato.sort((a, b) => new Date(b.data) - new Date(a.data));
-            
-            extrato.forEach(transacao => {
-                const divTransacao = document.createElement('div');
-                divTransacao.className = 'transacao';
-                
-                const valor = transacao.valor;
-                const isTaxa = transacao.descricao.includes('Taxa');
-                
-                divTransacao.innerHTML = `
+            extrato.sort((a, b) => new Date(b.data) - new Date(a.data)).forEach(transacao => {
+                const div = document.createElement('div');
+                div.className = 'transacao';
+                div.innerHTML = `
                     <div class="transacao-info">
                         <div class="transacao-descricao">${transacao.descricao}</div>
                         <div class="transacao-data">${new Date(transacao.data).toLocaleString()}</div>
                     </div>
                     <div class="transacao-valor">
-                        <div class="${valor >= 0 ? 'valor-positivo' : 'valor-negativo'}">
-                            ${valor >= 0 ? '+' : ''}${valor.toLocaleString('pt-BR', {
+                        <div class="${transacao.valor >= 0 ? 'valor-positivo' : 'valor-negativo'}">
+                            ${transacao.valor >= 0 ? '+' : ''}${transacao.valor.toLocaleString('pt-BR', {
                                 style: 'currency',
                                 currency: 'BRL'
                             })}
                         </div>
-                        ${transacao.taxa ? `
+                        ${transacao.descricao.includes('Taxa') ? `
                         <div class="valor-taxa">
-                            Taxa: -${transacao.taxa.toLocaleString('pt-BR', {
-                                style: 'currency',
-                                currency: 'BRL'
-                            })}
+                            Taxa de serviço
                         </div>
                         ` : ''}
                     </div>
                 `;
-                
-                extratoContainer.appendChild(divTransacao);
+                extratoContainer.appendChild(div);
             });
         }
-        
-        // Resgata saldo diário
+
+        // Resgatar saldo diário
         function resgatarSaldo() {
-            const hoje = new Date().toLocaleDateString();
-            const ultimoResgate = localStorage.getItem('ultimoResgate');
-            
-            if (ultimoResgate !== hoje) {
-                registrarTransacao('Resgate diário', 100);
-                localStorage.setItem('ultimoResgate', hoje);
+            if (gameBank.resgatarBonus()) {
                 alert('R$100 resgatados! Volte amanhã para mais.');
+                atualizarSaldoDisplay();
+                carregarExtrato();
             } else {
                 alert('Você já resgatou hoje. Volte amanhã!');
             }
         }
-        
-        // Registra uma transação
-        function registrarTransacao(descricao, valorBruto, isGanho = false) {
-            let valorLiquido = valorBruto;
-            let taxa = 0;
+
+        // Inicialização do sistema
+        document.addEventListener('DOMContentLoaded', function() {
+            const username = localStorage.getItem('user') || 'Usuário';
+            document.getElementById('username').textContent = username;
             
-            // Aplica taxa sobre ganhos
-            if (isGanho && valorBruto > 0) {
-                taxa = valorBruto * TAXA_APOSTAS;
-                valorLiquido = valorBruto - taxa;
-                
-                // Registra a taxa como transação separada
-                registrarTransacao(`Taxa sobre ${descricao.toLowerCase()}`, -taxa);
-            }
+            // Verifica e corrige qualquer adulteração
+            gameBank.getSaldo();
             
-            // Atualiza saldo
-            const saldoAtual = Number(localStorage.getItem('saldo')) || 0;
-            const novoSaldo = saldoAtual + valorLiquido;
-            localStorage.setItem('saldo', novoSaldo);
-            
-            // Adiciona ao extrato
-            const extrato = JSON.parse(localStorage.getItem('extrato')) || [];
-            extrato.push({
-                data: new Date().toISOString(),
-                descricao: descricao,
-                valor: valorLiquido,
-                taxa: isGanho ? taxa : null,
-                saldo: novoSaldo
-            });
-            
-            localStorage.setItem('extrato', JSON.stringify(extrato));
-            
-            // Atualiza a tela
-            updateSaldo();
+            // Atualiza a exibição
+            atualizarSaldoDisplay();
             carregarExtrato();
             
-            return {
-                liquido: valorLiquido,
-                taxa: taxa
-            };
-        }
+            // Proteção adicional contra manipulação
+            setInterval(() => {
+                gameBank.getSaldo(); // Verifica integridade periodicamente
+            }, 30000); // A cada 30 segundos
+        });
+
+        // Proteção contra alteração do localStorage
+        const originalLocalStorage = window.localStorage;
+        Object.defineProperty(window, 'localStorage', {
+            get: function() {
+                return new Proxy(originalLocalStorage, {
+                    set: function(target, prop, value) {
+                        if (prop === 'saldoSeguro' || prop === 'extratoSeguro' || prop === 'hashSaldo') {
+                            console.warn('Tentativa de alteração bloqueada:', prop);
+                            return false;
+                        }
+                        target[prop] = value;
+                        return true;
+                    },
+                    get: function(target, prop) {
+                        return target[prop];
+                    }
+                });
+            }
+        });
     </script>
 </body>
 </html>
