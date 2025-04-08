@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plinko - Cassino TCC</title>
+    <style>
+        :root {
+            --cor-primaria: #ffcc00;
+            --cor-fundo: #121212;
+            --cor-painel: #1e1e1e;
+            --cor-texto: white;
+            --cor-ganho: #4CAF50;
+            --cor-bolinha: #ff5722;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: var(--cor-fundo);
+            color: var(--cor-texto);
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        h1 {
+            color: var(--cor-primaria);
+            margin-bottom: 20px;
+        }
+        
+        #controls {
+            background-color: var(--cor-painel);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 0 auto 20px;
+            max-width: 500px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        input, button, select {
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+        }
+        
+        input {
+            width: 120px;
+            background-color: #333;
+            color: white;
+        }
+        
+        select {
+            background-color: #333;
+            color: white;
+            cursor: pointer;
+        }
+        
+        button {
+            background-color: var(--cor-primaria);
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+            min-width: 100px;
+            transition: all 0.2s;
+        }
+        
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            transform: none !important;
+            box-shadow: none;
+        }
+        
+        #game-container {
+            position: relative;
+            height: 500px;
+            margin: 20px auto;
+            background-color: #1a1a2e;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid #333;
+            max-width: 600px;
+        }
+        
+        #plinko-board {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        .pino {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: var(--cor-primaria);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .bolinha {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background-color: var(--cor-bolinha);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            box-shadow: 0 0 5px rgba(255, 87, 34, 0.7);
+        }
+        
+        .caixa-multiplicador {
+            position: absolute;
+            bottom: 0;
+            width: calc(100% / 9);
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            color: white;
+            border-top: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        #info-panel {
+            background-color: var(--cor-painel);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px auto;
+            max-width: 500px;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .info-item {
+            margin: 0;
+        }
+        
+        .info-value {
+            color: var(--cor-primaria);
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        
+        #resultado {
+            min-height: 24px;
+            font-size: 18px;
+            margin: 10px 0;
+        }
+        
+        .ganho {
+            color: var(--cor-ganho);
+        }
+        
+        .perda {
+            color: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎯 Plinko Multiplicador</h1>
+    
+    <div id="controls">
+        <input type="number" id="valorAposta" placeholder="Valor (R$)" min="0.10" step="0.01">
+        <select id="dificuldade">
+            <option value="8">Fácil (8 linhas)</option>
+            <option value="12" selected>Médio (12 linhas)</option>
+            <option value="16">Difícil (16 linhas)</option>
+        </select>
+        <button id="btnJogar">Jogar</button>
+        <button id="btnMultiplas" disabled>10 Jogadas</button>
+    </div>
+    
+    <div id="game-container">
+        <div id="plinko-board"></div>
+    </div>
+    
+    <div id="info-panel">
+        <div class="info-item">Saldo: <span class="info-value" id="saldo-value">0</span></div>
+        <div class="info-item">Aposta: <span class="info-value" id="aposta-value">0</span></div>
+        <div class="info-item">Ganho: <span class="info-value" id="ganho-value">0</span></div>
+    </div>
+    
+    <p id="resultado"></p>
+
+    <script>
+        // Variáveis do jogo
+        let saldo = parseFloat(localStorage.getItem('saldo')) || 100.00;
+        let valorAposta = 0;
+        let multiplicadores = [];
+        let bolinhasAtivas = 0;
+        let jogoEmAndamento = false;
+        let dificuldade = 12;
+        
+        // Configurações
+        const MULTIPLICADORES_BASE = {
+            8: [0.2, 0.4, 1, 3, 1, 0.4, 0.2],  // Fácil
+            12: [0.1, 0.3, 0.8, 2, 5, 2, 0.8, 0.3, 0.1],  // Médio
+            16: [0.05, 0.2, 0.5, 1.5, 4, 10, 4, 1.5, 0.5, 0.2, 0.05]  // Difícil
+        };
+        
+        // Elementos DOM
+        const btnJogar = document.getElementById('btnJogar');
+        const btnMultiplas = document.getElementById('btnMultiplas');
+        const inputAposta = document.getElementById('valorAposta');
+        const selectDificuldade = document.getElementById('dificuldade');
+        const plinkoBoard = document.getElementById('plinko-board');
+        
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSaldo();
+            criarTabuleiro();
+            
+            // Configura eventos
+            btnJogar.addEventListener('click', iniciarJogo);
+            btnMultiplas.addEventListener('click', () => iniciarMultiplasJogadas(10));
+            inputAposta.addEventListener('input', validarAposta);
+            selectDificuldade.addEventListener('change', () => {
+                dificuldade = parseInt(selectDificuldade.value);
+                criarTabuleiro();
+            });
+        });
+        
+        // Atualiza o saldo na tela
+        function updateSaldo() {
+            document.getElementById('saldo-value').textContent = saldo.toFixed(2);
+            localStorage.setItem('saldo', saldo);
+        }
+        
+        // Valida o valor da aposta
+        function validarAposta() {
+            const valor = parseFloat(inputAposta.value);
+            const valido = valor && valor >= 0.10 && valor <= saldo;
+            btnJogar.disabled = !valido;
+            btnMultiplas.disabled = !valido || (valor * 10) > saldo;
+        }
+        
+        // Cria o tabuleiro com pinos
+        function criarTabuleiro() {
+            plinkoBoard.innerHTML = '';
+            multiplicadores = MULTIPLICADORES_BASE[dificuldade];
+            
+            const largura = plinkoBoard.clientWidth;
+            const altura = plinkoBoard.clientHeight - 40; // Desconta altura das caixas
+            
+            const espacamentoHorizontal = largura / (multiplicadores.length + 1);
+            const espacamentoVertical = altura / dificuldade;
+            
+            // Cria pinos em padrão triangular
+            for (let linha = 1; linha <= dificuldade; linha++) {
+                const pinosNaLinha = linha;
+                const offset = (largura - (pinosNaLinha * espacamentoHorizontal)) / 2;
+                
+                for (let i = 0; i < pinosNaLinha; i++) {
+                    const pino = document.createElement('div');
+                    pino.className = 'pino';
+                    pino.style.left = `${offset + (i * espacamentoHorizontal) + (espacamentoHorizontal / 2)}px`;
+                    pino.style.top = `${linha * espacamentoVertical}px`;
+                    plinkoBoard.appendChild(pino);
+                }
+            }
+            
+            // Cria caixas de multiplicador na base
+            for (let i = 0; i < multiplicadores.length; i++) {
+                const caixa = document.createElement('div');
+                caixa.className = 'caixa-multiplicador';
+                caixa.style.left = `${i * (largura / multiplicadores.length)}px`;
+                caixa.textContent = `${multiplicadores[i]}x`;
+                caixa.style.backgroundColor = `rgba(255, 204, 0, ${0.1 + (multiplicadores[i] / Math.max(...multiplicadores) * 0.4})`;
+                plinkoBoard.appendChild(caixa);
+            }
+        }
+        
+        // Inicia um novo jogo
+        function iniciarJogo() {
+            if (jogoEmAndamento) return;
+            
+            valorAposta = parseFloat(inputAposta.value);
+            
+            if (isNaN(valorAposta) {
+                alert('Por favor, insira um valor válido para a aposta!');
+                return;
+            }
+
+            if (valorAposta < 0.10) {
+                alert('O valor mínimo da aposta é R$ 0.10!');
+                return;
+            }
+
+            if (valorAposta > saldo) {
+                alert('Saldo insuficiente para esta aposta!');
+                return;
+            }
+            
+            // Deduz a aposta
+            registrarTransacao("Aposta no Plinko", -valorAposta);
+            document.getElementById('aposta-value').textContent = valorAposta.toFixed(2);
+            document.getElementById('resultado').textContent = '';
+            
+            jogoEmAndamento = true;
+            bolinhasAtivas++;
+            
+            // Cria e anima a bolinha
+            const bolinha = document.createElement('div');
+            bolinha.className = 'bolinha';
+            bolinha.style.left = `${plinkoBoard.clientWidth / 2}px`;
+            bolinha.style.top = '30px';
+            plinkoBoard.appendChild(bolinha);
+            
+            // Configurações da física
+            let x = plinkoBoard.clientWidth / 2;
+            let y = 30;
+            let velocidadeX = (Math.random() - 0.5) * 2;
+            let velocidadeY = 1;
+            const gravidade = 0.05;
+            const atrito = 0.99;
+            const forcaPino = 0.5;
+            
+            const animacao = setInterval(() => {
+                // Aplica gravidade
+                velocidadeY += gravidade;
+                
+                // Atualiza posição
+                x += velocidadeX;
+                y += velocidadeY;
+                bolinha.style.left = `${x}px`;
+                bolinha.style.top = `${y}px`;
+                
+                // Verifica colisão com pinos
+                const pinos = document.querySelectorAll('.pino');
+                pinos.forEach(pino => {
+                    const rectPino = pino.getBoundingClientRect();
+                    const rectBolinha = bolinha.getBoundingClientRect();
+                    
+                    const distancia = Math.sqrt(
+                        Math.pow(rectBolinha.left + 8 - (rectPino.left + 4), 2) +
+                        Math.pow(rectBolinha.top + 8 - (rectPino.top + 4), 2)
+                    );
+                    
+                    if (distancia < 12) { // Raio da bolinha + raio do pino
+                        // Calcula ângulo de colisão
+                        const angulo = Math.atan2(
+                            (rectBolinha.top + 8) - (rectPino.top + 4),
+                            (rectBolinha.left + 8) - (rectPino.left + 4)
+                        );
+                        
+                        // Aplica força de ricochete
+                        velocidadeX = Math.cos(angulo) * forcaPino;
+                        velocidadeY = Math.sin(angulo) * forcaPino;
+                        
+                        // Aplica pequena variação aleatória
+                        velocidadeX += (Math.random() - 0.5) * 0.3;
+                    }
+                });
+                
+                // Verifica colisão com paredes
+                if (x < 8 || x > plinkoBoard.clientWidth - 8) {
+                    velocidadeX = -velocidadeX * atrito;
+                    x = x < 8 ? 8 : plinkoBoard.clientWidth - 8;
+                }
+                
+                // Verifica se chegou na base
+                if (y > plinkoBoard.clientHeight - 30) {
+                    clearInterval(animacao);
+                    bolinha.remove();
+                    bolinhasAtivas--;
+                    
+                    // Determina em qual caixa caiu
+                    const caixas = document.querySelectorAll('.caixa-multiplicador');
+                    let caixaIndex = -1;
+                    
+                    caixas.forEach((caixa, index) => {
+                        const rect = caixa.getBoundingClientRect();
+                        if (x >= rect.left && x <= rect.right) {
+                            caixaIndex = index;
+                        }
+                    });
+                    
+                    if (caixaIndex >= 0 && caixaIndex < multiplicadores.length) {
+                        const multiplicador = multiplicadores[caixaIndex];
+                        const ganho = valorAposta * multiplicador;
+                        
+                        // Efeito visual na caixa
+                        caixas[caixaIndex].style.boxShadow = '0 0 15px rgba(255, 255, 255, 0.7)';
+                        setTimeout(() => {
+                            caixas[caixaIndex].style.boxShadow = 'none';
+                        }, 500);
+                        
+                        // Processa ganho
+                        finalizarJogo(ganho, multiplicador);
+                    }
+                    
+                    if (bolinhasAtivas === 0) {
+                        jogoEmAndamento = false;
+                    }
+                }
+            }, 16); // ~60fps
+        }
+        
+        // Inicia múltiplas jogadas automáticas
+        function iniciarMultiplasJogadas(vezes) {
+            if (jogoEmAndamento) return;
+            
+            let executadas = 0;
+            const intervalo = setInterval(() => {
+                if (executadas < vezes && !jogoEmAndamento) {
+                    iniciarJogo();
+                    executadas++;
+                } else if (executadas >= vezes && bolinhasAtivas === 0) {
+                    clearInterval(intervalo);
+                }
+            }, 800);
+        }
+        
+        // Finaliza o jogo com vitória
+        function finalizarJogo(ganhoBruto, multiplicador) {
+            const resultadoElement = document.getElementById('resultado');
+            const ganhoLiquido = ganhoBruto * 0.875; // Aplica taxa de 12.5%
+            const taxa = ganhoBruto * 0.125;
+            
+            registrarTransacao(`Ganho no Plinko (${multiplicador}x)`, ganhoBruto, true);
+            
+            resultadoElement.innerHTML = 
+                `🎉 Multiplicador: ${multiplicador}x | Ganho: R$${ganhoLiquido.toFixed(2)}<br>` +
+                `<small>Taxa de 12.5%: R$${taxa.toFixed(2)}</small>`;
+            resultadoElement.className = 'ganho';
+        }
+        
+        // Registra transações
+        function registrarTransacao(descricao, valorBruto, isGanho = false) {
+            const TAXA_APOSTAS = 0.125;
+            let valorLiquido = valorBruto;
+            let taxa = 0;
+            
+            if (isGanho && valorBruto > 0) {
+                taxa = parseFloat((valorBruto * TAXA_APOSTAS).toFixed(2));
+                valorLiquido = parseFloat((valorBruto - taxa).toFixed(2));
+                registrarTransacao(`Taxa sobre ${descricao.toLowerCase()}`, -taxa);
+            }
+            
+            saldo += valorLiquido;
+            saldo = parseFloat(saldo.toFixed(2));
+            
+            const extrato = JSON.parse(localStorage.getItem('extrato')) || [];
+            extrato.push({
+                data: new Date().toLocaleString('pt-BR'),
+                descricao: descricao,
+                valor: valorLiquido,
+                saldo: saldo
+            });
+            
+            localStorage.setItem('extrato', JSON.stringify(extrato));
+            localStorage.setItem('saldo', saldo);
+            updateSaldo();
+            validarAposta();
+        }
+    </script>
+</body>
+</html>
