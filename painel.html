@@ -213,16 +213,36 @@
     </div>
 
     <script>
+        // Função para migrar dados da versão antiga para a nova
+        function migrarDados() {
+            // Migrar saldo se existir na versão antiga
+            const saldoAntigo = localStorage.getItem('cassino_saldo');
+            if (saldoAntigo && !localStorage.getItem('cassino_saldo_v2')) {
+                localStorage.setItem('cassino_saldo_v2', saldoAntigo);
+                localStorage.removeItem('cassino_saldo');
+            }
+            
+            // Migrar extrato se existir na versão antiga
+            const extratoAntigo = JSON.parse(localStorage.getItem('cassino_extrato'));
+            if (extratoAntigo && !localStorage.getItem('cassino_extrato_v2')) {
+                localStorage.setItem('cassino_extrato_v2', JSON.stringify(extratoAntigo));
+                localStorage.removeItem('cassino_extrato');
+            }
+        }
+
         // Verifica se o usuário está logado (se não, redireciona para login)
         if (!localStorage.getItem('cassino_user')) {
             window.location.href = 'login.html';
         }
 
+        // Migra os dados para o novo formato
+        migrarDados();
+
         // Atualiza o nome do usuário
         document.getElementById('username').textContent = localStorage.getItem('cassino_user');
 
         // Sistema de Saldo e Transações
-        const saldoAtual = parseFloat(localStorage.getItem('cassino_saldo')) || 100;
+        const saldoAtual = parseFloat(localStorage.getItem('cassino_saldo_v2')) || 100;
         document.getElementById('saldo-display').textContent = saldoAtual.toLocaleString('pt-BR', {
             style: 'currency',
             currency: 'BRL'
@@ -235,8 +255,18 @@
             
             if (ultimoResgate !== hoje) {
                 const novoSaldo = saldoAtual + 100;
-                localStorage.setItem('cassino_saldo', novoSaldo.toString());
+                localStorage.setItem('cassino_saldo_v2', novoSaldo.toString());
                 localStorage.setItem('ultimo_resgate', hoje);
+                
+                // Registrar transação no extrato
+                const extrato = JSON.parse(localStorage.getItem('cassino_extrato_v2')) || [];
+                extrato.unshift({
+                    data: new Date().toISOString(),
+                    descricao: "Bônus diário",
+                    valor: 100,
+                    saldo: novoSaldo
+                });
+                localStorage.setItem('cassino_extrato_v2', JSON.stringify(extrato));
                 
                 alert('R$100 resgatados com sucesso!');
                 window.location.reload(); // Atualiza a página
@@ -245,8 +275,8 @@
             }
         });
 
-        // Carrega o extrato (simplificado para exemplo)
-        const extrato = JSON.parse(localStorage.getItem('cassino_extrato')) || [];
+        // Carrega o extrato
+        const extrato = JSON.parse(localStorage.getItem('cassino_extrato_v2')) || [];
         const extratoContainer = document.getElementById('extrato');
         
         if (extrato.length === 0) {
@@ -255,10 +285,17 @@
             extrato.forEach(transacao => {
                 const div = document.createElement('div');
                 div.className = 'transacao';
+                
+                // Verifica se há taxa (transações negativas após um ganho)
+                const taxaElement = transacao.descricao.toLowerCase().includes('taxa') 
+                    ? `<div class="valor-taxa">Taxa: ${Math.abs(transacao.valor).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}</div>`
+                    : '';
+                
                 div.innerHTML = `
                     <div class="transacao-info">
                         <div class="transacao-descricao">${transacao.descricao}</div>
                         <div class="transacao-data">${new Date(transacao.data).toLocaleString()}</div>
+                        ${taxaElement}
                     </div>
                     <div class="transacao-valor">
                         <div class="${transacao.valor >= 0 ? 'valor-positivo' : 'valor-negativo'}">
@@ -267,6 +304,7 @@
                                 currency: 'BRL'
                             })}
                         </div>
+                        <div class="transacao-data">Saldo: ${transacao.saldo?.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'}) || ''}</div>
                     </div>
                 `;
                 extratoContainer.appendChild(div);
