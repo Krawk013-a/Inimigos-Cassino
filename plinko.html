@@ -277,7 +277,7 @@
                 caixa.className = 'caixa-multiplicador';
                 caixa.style.left = `${i * (largura / multiplicadores.length)}px`;
                 caixa.textContent = `${multiplicadores[i]}x`;
-                caixa.style.backgroundColor = `rgba(255, 204, 0, ${0.1 + (multiplicadores[i] / Math.max(...multiplicadores) * 0.4})`;
+                caixa.style.backgroundColor = `rgba(255, 204, 0, ${0.1 + (multiplicadores[i] / Math.max(...multiplicadores) * 0.4)})`;
                 plinkoBoard.appendChild(caixa);
             }
         }
