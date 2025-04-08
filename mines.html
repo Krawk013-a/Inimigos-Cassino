@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -64,8 +63,7 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
 
-        input,
-        button {
+        input, button {
             padding: 12px;
             margin: 8px;
             border-radius: 5px;
@@ -140,6 +138,10 @@
             color: #f44336;
         }
 
+        .error-message {
+            color: #FF9800;
+        }
+
         footer {
             background-color: #1a1a1a;
             color: #999;
@@ -160,15 +162,13 @@
         }
     </style>
 </head>
-
 <body>
-
     <h1>🪙 Mines <span class="emoji">💎</span></h1>
 
     <div id="controls">
         <input type="number" id="valorAposta" placeholder="Valor (R$)" min="1" step="0.01">
         <input type="number" id="numBombas" placeholder="Nº de bombas (1-24)" min="1" max="24" value="1">
-        <button onclick="iniciarJogo()">Jogar</button>
+        <button id="jogarBtn" onclick="iniciarJogo()">Jogar</button>
         <button id="pararBtn" onclick="pararJogo()" disabled>Sacar</button>
     </div>
 
@@ -187,9 +187,52 @@
     </footer>
 
     <script>
-        // Variáveis globais
+        // =============================================
+        // SISTEMA BANCÁRIO (Compatível com o painel)
+        // =============================================
+        const CassinoBank = {
+            getSaldo: function() {
+                return parseFloat(localStorage.getItem('cassino_saldo_v2')) || 100.00;
+            },
+            
+            setSaldo: function(valor) {
+                localStorage.setItem('cassino_saldo_v2', valor.toFixed(2));
+            },
+            
+            transacionar: function(descricao, valorBruto, isGanho = false) {
+                const TAXA = 0.125;
+                let valorLiquido = valorBruto;
+                let taxa = 0;
+                
+                if (isGanho && valorBruto > 0) {
+                    taxa = valorBruto * TAXA;
+                    valorLiquido = valorBruto - taxa;
+                    this.registrarTransacao(`Taxa sobre ${descricao.toLowerCase()}`, -taxa);
+                }
+                
+                const novoSaldo = this.getSaldo() + valorLiquido;
+                this.setSaldo(novoSaldo);
+                this.registrarTransacao(descricao, valorLiquido);
+                
+                return parseFloat(valorLiquido.toFixed(2));
+            },
+            
+            registrarTransacao: function(descricao, valor) {
+                const extrato = JSON.parse(localStorage.getItem('cassino_extrato_v2')) || [];
+                extrato.unshift({
+                    data: new Date().toISOString(),
+                    descricao: descricao,
+                    valor: parseFloat(valor.toFixed(2)),
+                    saldo: this.getSaldo()
+                });
+                localStorage.setItem('cassino_extrato_v2', JSON.stringify(extrato));
+            }
+        };
+
+        // =============================================
+        // VARIÁVEIS DO JOGO
+        // =============================================
         let bombPositions = [];
-        let saldo = parseFloat(localStorage.getItem('saldo')) || 100.00; // Saldo inicial de R$100,00
         let valorAposta = 0;
         let celulasReveladas = [];
         let multiplicadorAtual = 1;
@@ -197,16 +240,23 @@
         let incrementoMultiplicador = 0;
         let jogoAtivo = false;
         let celulasSegurasReveladas = 0;
-        let processandoClique = false; // Variável para controlar cliques múltiplos
+        let processandoClique = false;
 
-        // Inicialização do jogo
-        document.addEventListener('DOMContentLoaded', function () {
+        // =============================================
+        // INICIALIZAÇÃO
+        // =============================================
+        document.addEventListener('DOMContentLoaded', function() {
+            // Verifica se está logado
+            if (!localStorage.getItem('cassino_user')) {
+                window.location.href = 'login.html';
+                return;
+            }
+
             updateSaldo();
             carregarVersao();
-
-            // Configurar validação dos inputs
-            document.getElementById('valorAposta').addEventListener('change', validarAposta);
-            document.getElementById('numBombas').addEventListener('change', validarNumBombas);
+            
+            document.getElementById('valorAposta').addEventListener('input', validarAposta);
+            document.getElementById('numBombas').addEventListener('input', validarNumBombas);
         });
 
         function carregarVersao() {
@@ -223,22 +273,33 @@
                 });
         }
 
+        // =============================================
+        // FUNÇÕES DO JOGO
+        // =============================================
         function validarAposta() {
             const input = document.getElementById('valorAposta');
-            if (input.value < 0.01) input.value = 0.01;
-            if (input.value > 10000000) input.value = 10000000;
-            input.value = parseFloat(input.value).toFixed(2);
+            let valor = parseFloat(input.value);
+            
+            if (isNaN(valor)) valor = 0;
+            if (valor < 0.01) valor = 0.01;
+            if (valor > 10000) valor = 10000;
+            
+            input.value = valor.toFixed(2);
         }
 
         function validarNumBombas() {
             const input = document.getElementById('numBombas');
-            if (input.value < 1) input.value = 1;
-            if (input.value > 24) input.value = 24;
+            let valor = parseInt(input.value);
+            
+            if (isNaN(valor)) valor = 1;
+            if (valor < 1) valor = 1;
+            if (valor > 24) valor = 24;
+            
+            input.value = valor;
         }
 
         function updateSaldo() {
-            document.getElementById('saldo-value').textContent = saldo.toFixed(2);
-            localStorage.setItem('saldo', saldo);
+            document.getElementById('saldo-value').textContent = CassinoBank.getSaldo().toFixed(2);
         }
 
         function iniciarJogo() {
@@ -254,52 +315,29 @@
             const numBombas = parseInt(document.getElementById('numBombas').value);
 
             // Validações
-            if (isNaN(valorAposta)) {
-                mostrarResultado('Por favor, insira um valor válido para a aposta!', 'error');
+            if (isNaN(valorAposta) || valorAposta < 0.01) {
+                mostrarResultado('Valor mínimo: R$0.01', 'error');
                 return;
             }
 
-            if (valorAposta < 0.01) {
-                mostrarResultado('O valor mínimo da aposta é R$ 0.01!', 'error');
-                return;
-            }
-
-            if (valorAposta > saldo) {
-                mostrarResultado('Saldo insuficiente para esta aposta!', 'error');
+            if (valorAposta > CassinoBank.getSaldo()) {
+                mostrarResultado('Saldo insuficiente!', 'error');
                 return;
             }
 
             if (numBombas < 1 || numBombas > 24) {
-                mostrarResultado('Por favor, selecione entre 1 e 24 bombas!', 'error');
+                mostrarResultado('Selecione 1-24 bombas', 'error');
                 return;
             }
 
-            // Configurar multiplicadores baseado no número de bombas
+            // Configurar multiplicadores
             const multiplicadores = {
-                1: [1.01, 0.07],
-                2: [1.01, 0.12],
-                3: [1.01, 0.18],
-                4: [1.01, 0.24],
-                5: [1.01, 0.3],
-                6: [1.01, 0.37],
-                7: [1.01, 0.46],
-                8: [1.01, 0.55],
-                9: [1.01, 0.65],
-                10: [1.01, 0.77],
-                11: [1.01, 0.90],
-                12: [1.01, 1.06],
-                13: [1.01, 1.25],
-                14: [1.01, 1.47],
-                15: [1.01, 1.55],
-                16: [1.01, 1.75],
-                17: [1.01, 2.09],
-                18: [1.01, 2.54],
-                19: [1.01, 3.12],
-                20: [1.01, 3.95],
-                21: [1.01, 5.19],
-                22: [1.01, 7.25],
-                23: [1.01, 11.37],
-                24: [1.01, 24.75]
+                1: [1.01, 0.07], 2: [1.01, 0.12], 3: [1.01, 0.18], 4: [1.01, 0.24],
+                5: [1.01, 0.3], 6: [1.01, 0.37], 7: [1.01, 0.46], 8: [1.01, 0.55],
+                9: [1.01, 0.65], 10: [1.01, 0.77], 11: [1.01, 0.90], 12: [1.01, 1.06],
+                13: [1.01, 1.25], 14: [1.01, 1.47], 15: [1.01, 1.55], 16: [1.01, 1.75],
+                17: [1.01, 2.09], 18: [1.01, 2.54], 19: [1.01, 3.12], 20: [1.01, 3.95],
+                21: [1.01, 5.19], 22: [1.01, 7.25], 23: [1.01, 11.37], 24: [1.01, 24.75]
             };
 
             [multiplicadorBase, incrementoMultiplicador] = multiplicadores[numBombas];
@@ -310,7 +348,7 @@
             document.getElementById('ganho').textContent = (valorAposta * multiplicadorAtual).toFixed(2);
 
             // Deduzir aposta do saldo
-            saldo -= valorAposta;
+            CassinoBank.transacionar("Aposta no Mines", -valorAposta);
             updateSaldo();
 
             // Gerar posições aleatórias das bombas
@@ -332,70 +370,64 @@
                 grid.appendChild(cell);
             }
 
-            // Resetar mensagens e habilitar botão de saque
-            mostrarResultado('', '');
+            // Iniciar jogo
+            mostrarResultado('Escolha uma célula!', '');
+            document.getElementById('jogarBtn').disabled = true;
             document.getElementById('pararBtn').disabled = false;
             jogoAtivo = true;
         }
 
         function revelarCelula(pos, cell) {
-            // Verificar se o jogo está ativo, se a célula não foi revelada e se não há outro clique sendo processado
             if (!jogoAtivo || celulasReveladas[pos] || processandoClique) return;
-
-            // Bloquear novos cliques durante o processamento
             processandoClique = true;
 
             try {
-                // Marcar célula como revelada
                 celulasReveladas[pos] = true;
 
                 if (bombPositions.includes(pos)) {
-                    // Célula é uma bomba - jogador perde
+                    // Perdeu
                     cell.className = 'cell bomb';
                     cell.textContent = '💣';
                     mostrarResultado('Você perdeu! 💥', 'lose');
                     document.getElementById('pararBtn').disabled = true;
+                    document.getElementById('jogarBtn').disabled = false;
                     mostrarBombas();
                     jogoAtivo = false;
                 } else {
-                    // Célula segura - continuar jogo
+                    // Continua
                     cell.className = 'cell revealed';
                     cell.textContent = multiplicadorAtual.toFixed(1) + 'x';
                     celulasSegurasReveladas++;
 
-                    // Atualizar multiplicador com precisão decimal
+                    // Atualizar multiplicador
                     multiplicadorAtual = parseFloat((multiplicadorAtual + incrementoMultiplicador).toFixed(2));
                     document.getElementById('multiplicador').textContent = multiplicadorAtual.toFixed(2) + 'x';
                     document.getElementById('ganho').textContent = (valorAposta * multiplicadorAtual).toFixed(2);
                 }
             } finally {
-                // Liberar para novos cliques
                 processandoClique = false;
             }
         }
 
         function pararJogo() {
-            // Verificar se o jogo está ativo e se não há outro clique sendo processado
             if (!jogoAtivo || processandoClique) return;
-
-            // Bloquear novos cliques durante o processamento
             processandoClique = true;
 
             try {
-                // Calcular ganhos com precisão decimal
                 const ganhoBruto = parseFloat((valorAposta * multiplicadorAtual).toFixed(2));
-                const ganhoLiquido = parseFloat((ganhoBruto * 0.975).toFixed(2)); // 12.5% de taxa
+                const ganhoLiquido = CassinoBank.transacionar(
+                    `Ganho no Mines (${multiplicadorAtual.toFixed(2)}x)`, 
+                    ganhoBruto, 
+                    true
+                );
 
-                saldo += ganhoLiquido;
                 updateSaldo();
-
-                // Mostrar resultado
-                mostrarResultado(`Você sacou R$ ${ganhoLiquido.toFixed(2)}! 🤑`, 'win');
+                mostrarResultado(`Você ganhou R$ ${ganhoLiquido.toFixed(2)}! 🤑`, 'win');
                 document.getElementById('pararBtn').disabled = true;
+                document.getElementById('jogarBtn').disabled = false;
                 mostrarBombas();
                 jogoAtivo = false;
             } finally {
-                // Liberar para novos cliques
                 processandoClique = false;
             }
         }
@@ -415,16 +447,11 @@
             const elemento = document.getElementById('resultado');
             elemento.textContent = mensagem;
             elemento.className = '';
-
-            if (tipo === 'win') {
-                elemento.classList.add('win-message');
-            } else if (tipo === 'lose') {
-                elemento.classList.add('lose-message');
-            } else if (tipo === 'error') {
-                elemento.style.color = '#ff9800';
-            }
+            
+            if (tipo === 'win') elemento.classList.add('win-message');
+            else if (tipo === 'lose') elemento.classList.add('lose-message');
+            else if (tipo === 'error') elemento.classList.add('error-message');
         }
     </script>
 </body>
-
 </html>
