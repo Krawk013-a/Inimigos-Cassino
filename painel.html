@@ -213,68 +213,84 @@
     </div>
 
     <script>
-        // Sistema Bancário Protegido
-        const gameBank = (function() {
-            // Variáveis privadas
+        // Sistema Bancário Seguro
+        const SecureBank = (function() {
+            // Chaves de armazenamento
+            const STORAGE_KEYS = {
+                saldo: 'cassino_saldo_v2',
+                extrato: 'cassino_extrato_v2',
+                hash: 'cassino_hash_v2',
+                user: 'cassino_user'
+            };
+            
+            // Dados privados
             let _saldo = 0;
             let _extrato = [];
             
-            // Inicializa os valores
+            // Inicialização
             function init() {
                 try {
-                    const saldoSalvo = localStorage.getItem('saldoSeguro');
-                    const extratoSalvo = localStorage.getItem('extratoSeguro');
+                    // Carrega saldo
+                    const savedBalance = localStorage.getItem(STORAGE_KEYS.saldo);
+                    _saldo = savedBalance ? parseFloat(savedBalance) : 100; // Default R$100
                     
-                    _saldo = saldoSalvo ? Number(saldoSalvo) : 0;
-                    _extrato = extratoSalvo ? JSON.parse(extratoSalvo) : [];
+                    // Carrega extrato
+                    const savedStatement = localStorage.getItem(STORAGE_KEYS.extrato);
+                    _extrato = savedStatement ? JSON.parse(savedStatement) : [];
                     
-                    verificarIntegridade();
+                    // Verifica integridade
+                    if (!verifyIntegrity()) {
+                        resetData();
+                    }
                 } catch (e) {
-                    console.error("Erro ao carregar dados:", e);
-                    _saldo = 0;
-                    _extrato = [];
+                    console.error("Erro na inicialização:", e);
+                    resetData();
                 }
             }
             
-            // Gera um hash de verificação
-            function gerarHash(valor) {
-                try {
-                    return btoa(JSON.stringify({
-                        v: valor,
-                        d: new Date().getDate(),
-                        k: 'secure_' + valor.toString().slice(0, 3)
-                    }));
-                } catch (e) {
-                    return '';
-                }
+            // Gera hash de verificação
+            function generateHash() {
+                const data = {
+                    s: _saldo,
+                    d: new Date().getDate(),
+                    u: localStorage.getItem(STORAGE_KEYS.user) || 'guest'
+                };
+                return btoa(JSON.stringify(data));
             }
             
             // Verifica integridade dos dados
-            function verificarIntegridade() {
+            function verifyIntegrity() {
                 try {
-                    const hashSalvo = localStorage.getItem('hashSaldo');
-                    const hashAtual = gerarHash(_saldo);
-                    
-                    if (hashSalvo !== hashAtual) {
-                        console.warn("Integridade comprometida! Resetando saldo...");
-                        _saldo = 0;
-                        _extrato = [];
-                        salvarDados();
-                    }
+                    const savedHash = localStorage.getItem(STORAGE_KEYS.hash);
+                    const currentHash = generateHash();
+                    return savedHash === currentHash;
                 } catch (e) {
                     console.error("Erro na verificação:", e);
+                    return false;
                 }
             }
             
-            // Salva os dados com verificação
-            function salvarDados() {
+            // Salva dados com verificação
+            function saveData() {
                 try {
-                    localStorage.setItem('saldoSeguro', _saldo.toString());
-                    localStorage.setItem('extratoSeguro', JSON.stringify(_extrato));
-                    localStorage.setItem('hashSaldo', gerarHash(_saldo));
+                    localStorage.setItem(STORAGE_KEYS.saldo, _saldo.toString());
+                    localStorage.setItem(STORAGE_KEYS.extrato, JSON.stringify(_extrato));
+                    localStorage.setItem(STORAGE_KEYS.hash, generateHash());
                 } catch (e) {
                     console.error("Erro ao salvar dados:", e);
                 }
+            }
+            
+            // Reseta dados corrompidos
+            function resetData() {
+                _saldo = 100; // Saldo padrão
+                _extrato = [{
+                    data: new Date().toISOString(),
+                    descricao: "Sistema reiniciado",
+                    valor: 0,
+                    saldo: _saldo
+                }];
+                saveData();
             }
             
             // Inicializa imediatamente
@@ -282,56 +298,55 @@
             
             // Interface pública
             return {
-                getSaldo: function() {
-                    verificarIntegridade();
+                getBalance: function() {
+                    if (!verifyIntegrity()) {
+                        resetData();
+                    }
                     return _saldo;
                 },
                 
-                depositar: function(valor, descricao) {
-                    if (isNaN(valor) || valor <= 0) return false;
+                deposit: function(amount, description) {
+                    if (isNaN(amount) || amount <= 0) return false;
                     
-                    _saldo += valor;
+                    _saldo += amount;
                     _extrato.push({
                         data: new Date().toISOString(),
-                        descricao: descricao || "Depósito",
-                        valor: valor,
+                        descricao: description || "Depósito",
+                        valor: amount,
                         saldo: _saldo
                     });
                     
-                    salvarDados();
+                    saveData();
                     return true;
                 },
                 
-                sacar: function(valor, descricao) {
-                    if (isNaN(valor)) return false;
-                    valor = Math.abs(valor);
+                withdraw: function(amount, description) {
+                    if (isNaN(amount) || amount <= 0 || amount > _saldo) return false;
                     
-                    if (valor <= 0 || valor > _saldo) return false;
-                    
-                    _saldo -= valor;
+                    _saldo -= amount;
                     _extrato.push({
                         data: new Date().toISOString(),
-                        descricao: descricao || "Saque",
-                        valor: -valor,
+                        descricao: description || "Saque",
+                        valor: -amount,
                         saldo: _saldo
                     });
                     
-                    salvarDados();
+                    saveData();
                     return true;
                 },
                 
-                getExtrato: function() {
+                getStatement: function() {
                     return JSON.parse(JSON.stringify(_extrato));
                 },
                 
-                resgatarBonus: function() {
+                claimDailyBonus: function() {
                     try {
-                        const hoje = new Date().toLocaleDateString();
-                        const ultimoResgate = localStorage.getItem('ultimoResgate');
+                        const today = new Date().toLocaleDateString();
+                        const lastClaim = localStorage.getItem('last_bonus_claim');
                         
-                        if (ultimoResgate !== hoje) {
-                            if (this.depositar(100, "Resgate diário")) {
-                                localStorage.setItem('ultimoResgate', hoje);
+                        if (lastClaim !== today) {
+                            if (this.deposit(100, "Resgate diário")) {
+                                localStorage.setItem('last_bonus_claim', today);
                                 return true;
                             }
                         }
@@ -342,37 +357,37 @@
                     }
                 },
                 
-                transacionar: function(descricao, valorBruto, isGanho) {
-                    const TAXA = 0.125;
-                    let valorLiquido = valorBruto;
-                    let taxa = 0;
+                transaction: function(description, grossValue, isWin) {
+                    const FEE_RATE = 0.125;
+                    let netValue = grossValue;
+                    let fee = 0;
                     
-                    if (isGanho && valorBruto > 0) {
-                        taxa = valorBruto * TAXA;
-                        valorLiquido = valorBruto - taxa;
-                        this.sacar(taxa, "Taxa sobre " + descricao.toLowerCase());
+                    if (isWin && grossValue > 0) {
+                        fee = grossValue * FEE_RATE;
+                        netValue = grossValue - fee;
+                        this.withdraw(fee, "Taxa sobre " + description.toLowerCase());
                     }
                     
-                    if (valorBruto > 0) {
-                        this.depositar(valorLiquido, descricao);
+                    if (grossValue > 0) {
+                        this.deposit(netValue, description);
                     } else {
-                        this.sacar(-valorLiquido, descricao);
+                        this.withdraw(-netValue, description);
                     }
                     
                     return {
-                        liquido: valorLiquido,
-                        taxa: taxa
+                        netValue: netValue,
+                        fee: fee
                     };
                 }
             };
         })();
 
-        // Funções de interface
-        function atualizarSaldoDisplay() {
+        // Funções da interface do usuário
+        function updateBalanceDisplay() {
             try {
-                const saldo = gameBank.getSaldo();
+                const balance = SecureBank.getBalance();
                 document.getElementById('saldo-display').textContent = 
-                    saldo.toLocaleString('pt-BR', {
+                    balance.toLocaleString('pt-BR', {
                         style: 'currency',
                         currency: 'BRL'
                     });
@@ -381,30 +396,30 @@
             }
         }
 
-        function carregarExtrato() {
-            const extratoContainer = document.getElementById('extrato');
-            extratoContainer.innerHTML = '';
+        function loadStatement() {
+            const statementContainer = document.getElementById('extrato');
+            statementContainer.innerHTML = '';
             
             try {
-                const extrato = gameBank.getExtrato();
+                const statement = SecureBank.getStatement();
                 
-                if (extrato.length === 0) {
-                    extratoContainer.innerHTML = '<p>Nenhuma transação registrada</p>';
+                if (statement.length === 0) {
+                    statementContainer.innerHTML = '<p>Nenhuma transação registrada</p>';
                     return;
                 }
                 
-                extrato.sort((a, b) => new Date(b.data) - new Date(a.data)).forEach(transacao => {
+                statement.sort((a, b) => new Date(b.data) - new Date(a.data)).forEach(transaction => {
                     const div = document.createElement('div');
                     div.className = 'transacao';
                     
                     div.innerHTML = `
                         <div class="transacao-info">
-                            <div class="transacao-descricao">${transacao.descricao}</div>
-                            <div class="transacao-data">${new Date(transacao.data).toLocaleString()}</div>
+                            <div class="transacao-descricao">${transaction.descricao}</div>
+                            <div class="transacao-data">${new Date(transaction.data).toLocaleString()}</div>
                         </div>
                         <div class="transacao-valor">
-                            <div class="${transacao.valor >= 0 ? 'valor-positivo' : 'valor-negativo'}">
-                                ${transacao.valor >= 0 ? '+' : ''}${transacao.valor.toLocaleString('pt-BR', {
+                            <div class="${transaction.valor >= 0 ? 'valor-positivo' : 'valor-negativo'}">
+                                ${transaction.valor >= 0 ? '+' : ''}${transaction.valor.toLocaleString('pt-BR', {
                                     style: 'currency',
                                     currency: 'BRL'
                                 })}
@@ -412,20 +427,20 @@
                         </div>
                     `;
                     
-                    extratoContainer.appendChild(div);
+                    statementContainer.appendChild(div);
                 });
             } catch (e) {
                 console.error("Erro ao carregar extrato:", e);
-                extratoContainer.innerHTML = '<p class="valor-negativo">Erro ao carregar extrato</p>';
+                statementContainer.innerHTML = '<p class="valor-negativo">Erro ao carregar extrato</p>';
             }
         }
 
-        function resgatarSaldo() {
+        function claimDailyBonus() {
             try {
-                if (gameBank.resgatarBonus()) {
+                if (SecureBank.claimDailyBonus()) {
                     alert('R$100 resgatados! Volte amanhã para mais.');
-                    atualizarSaldoDisplay();
-                    carregarExtrato();
+                    updateBalanceDisplay();
+                    loadStatement();
                 } else {
                     alert('Você já resgatou hoje. Volte amanhã!');
                 }
@@ -436,27 +451,42 @@
         }
 
         // Inicialização segura
-        document.addEventListener('DOMContentLoaded', function() {
+        function initialize() {
             try {
-                const username = localStorage.getItem('user') || 'Usuário';
+                // Verifica se o usuário está logado
+                const username = localStorage.getItem('cassino_user');
+                if (!username) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+                
                 document.getElementById('username').textContent = username;
+                updateBalanceDisplay();
+                loadStatement();
                 
-                atualizarSaldoDisplay();
-                carregarExtrato();
-                
-                // Verificação periódica de integridade
-                setInterval(function() {
-                    gameBank.getSaldo();
+                // Verificação periódica de segurança
+                setInterval(() => {
+                    SecureBank.getBalance(); // Verifica integridade
                 }, 30000);
+                
             } catch (e) {
                 console.error("Erro na inicialização:", e);
             }
-        });
+        }
 
-        // Proteção contra alteração direta do localStorage
+        // Inicia quando o DOM estiver pronto
+        document.addEventListener('DOMContentLoaded', initialize);
+
+        // Proteção contra manipulação direta do localStorage
         (function() {
+            const protectedKeys = [
+                'cassino_saldo_v2',
+                'cassino_extrato_v2',
+                'cassino_hash_v2',
+                'last_bonus_claim'
+            ];
+            
             const originalLocalStorage = window.localStorage;
-            const protectedKeys = ['saldoSeguro', 'extratoSeguro', 'hashSaldo'];
             
             Object.defineProperty(window, 'localStorage', {
                 get: function() {
@@ -466,7 +496,7 @@
                         },
                         set: function(target, prop, value) {
                             if (protectedKeys.includes(prop.toString())) {
-                                console.warn(`Tentativa de alterar ${prop} bloqueada`);
+                                console.warn(`Tentativa de alteração bloqueada: ${prop}`);
                                 return false;
                             }
                             target[prop] = value;
