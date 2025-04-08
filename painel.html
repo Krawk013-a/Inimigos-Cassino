@@ -213,41 +213,72 @@
     </div>
 
     <script>
-        // Sistema Bancário Protegido
+        // Sistema Bancário Protegido - Versão Corrigida
         const gameBank = (function() {
-            // Variáveis privadas - não podem ser acessadas diretamente
-            let _saldo = Number(localStorage.getItem('saldoSeguro')) || 0;
-            let _extrato = JSON.parse(localStorage.getItem('extratoSeguro')) || [];
-            const _senhaSecreta = 'cassino@' + Math.random().toString(36).slice(2, 9);
+            // Variáveis privadas
+            let _saldo = 0;
+            let _extrato = [];
             
-            // Gera um hash de verificação único
-            function _gerarHash(valor) {
-                return btoa(JSON.stringify({
-                    valor: valor,
-                    chave: _senhaSecreta,
-                    dia: new Date().getDate()
-                }));
-            }
-            
-            // Verifica se os dados foram adulterados
-            function _verificarIntegridade() {
-                const hashSalvo = localStorage.getItem('hashSaldo');
-                const hashAtual = _gerarHash(_saldo);
-                
-                if (hashSalvo !== hashAtual) {
-                    console.warn('Integridade comprometida! Restaurando valores...');
+            // Inicializa os valores
+            function _init() {
+                try {
+                    const saldoSalvo = window.localStorage.getItem('saldoSeguro');
+                    const extratoSalvo = window.localStorage.getItem('extratoSeguro');
+                    
+                    _saldo = saldoSalvo ? Number(saldoSalvo) : 0;
+                    _extrato = extratoSalvo ? JSON.parse(extratoSalvo) : [];
+                    
+                    _verificarIntegridade();
+                } catch (e) {
+                    console.error("Erro ao carregar dados:", e);
                     _saldo = 0;
                     _extrato = [];
-                    _salvarDados();
                 }
             }
             
-            // Salva os dados com verificação de integridade
-            function _salvarDados() {
-                localStorage.setItem('saldoSeguro', _saldo);
-                localStorage.setItem('extratoSeguro', JSON.stringify(_extrato));
-                localStorage.setItem('hashSaldo', _gerarHash(_saldo));
+            // Gera um hash de verificação
+            function _gerarHash(valor) {
+                try {
+                    return btoa(JSON.stringify({
+                        v: valor,
+                        d: new Date().getDate(),
+                        k: 'secure_' + valor.toString().slice(0, 3)
+                    }));
+                } catch (e) {
+                    return '';
+                }
             }
+            
+            // Verifica integridade dos dados
+            function _verificarIntegridade() {
+                try {
+                    const hashSalvo = window.localStorage.getItem('hashSaldo');
+                    const hashAtual = _gerarHash(_saldo);
+                    
+                    if (hashSalvo !== hashAtual) {
+                        console.warn("Integridade comprometida! Resetando saldo...");
+                        _saldo = 0;
+                        _extrato = [];
+                        _salvarDados();
+                    }
+                } catch (e) {
+                    console.error("Erro na verificação:", e);
+                }
+            }
+            
+            // Salva os dados com verificação
+            function _salvarDados() {
+                try {
+                    window.localStorage.setItem('saldoSeguro', _saldo.toString());
+                    window.localStorage.setItem('extratoSeguro', JSON.stringify(_extrato));
+                    window.localStorage.setItem('hashSaldo', _gerarHash(_saldo));
+                } catch (e) {
+                    console.error("Erro ao salvar dados:", e);
+                }
+            }
+            
+            // Inicializa imediatamente
+            _init();
             
             // Interface pública
             return {
@@ -257,7 +288,7 @@
                 },
                 
                 depositar: function(valor, descricao = "Depósito") {
-                    if (valor <= 0) return false;
+                    if (isNaN(valor) || valor <= 0) return false;
                     
                     _saldo += valor;
                     _extrato.push({
@@ -272,6 +303,9 @@
                 },
                 
                 sacar: function(valor, descricao = "Saque") {
+                    if (isNaN(valor) return false;
+                    valor = Math.abs(valor);
+                    
                     if (valor <= 0 || valor > _saldo) return false;
                     
                     _saldo -= valor;
@@ -287,22 +321,27 @@
                 },
                 
                 getExtrato: function() {
-                    return JSON.parse(JSON.stringify(_extrato));
+                    return [..._extrato]; // Retorna cópia
                 },
                 
                 resgatarBonus: function() {
-                    const hoje = new Date().toLocaleDateString();
-                    const ultimoResgate = localStorage.getItem('ultimoResgate');
-                    
-                    if (ultimoResgate !== hoje) {
-                        this.depositar(100, "Resgate diário");
-                        localStorage.setItem('ultimoResgate', hoje);
-                        return true;
+                    try {
+                        const hoje = new Date().toLocaleDateString();
+                        const ultimoResgate = window.localStorage.getItem('ultimoResgate');
+                        
+                        if (ultimoResgate !== hoje) {
+                            if (this.depositar(100, "Resgate diário")) {
+                                window.localStorage.setItem('ultimoResgate', hoje);
+                                return true;
+                            }
+                        }
+                        return false;
+                    } catch (e) {
+                        console.error("Erro no resgate:", e);
+                        return false;
                     }
-                    return false;
                 },
                 
-                // Para uso em outros jogos
                 transacionar: function(descricao, valorBruto, isGanho = false) {
                     const TAXA = 0.125;
                     let valorLiquido = valorBruto;
@@ -328,101 +367,115 @@
             };
         })();
 
-        // Atualiza a exibição do saldo
+        // Funções de interface
         function atualizarSaldoDisplay() {
-            document.getElementById('saldo-display').textContent = 
-                gameBank.getSaldo().toLocaleString('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL'
-                });
+            try {
+                const saldo = gameBank.getSaldo();
+                document.getElementById('saldo-display').textContent = 
+                    saldo.toLocaleString('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL'
+                    });
+            } catch (e) {
+                console.error("Erro ao atualizar saldo:", e);
+            }
         }
 
-        // Carrega o extrato na tela
         function carregarExtrato() {
             const extratoContainer = document.getElementById('extrato');
             extratoContainer.innerHTML = '';
             
-            const extrato = gameBank.getExtrato();
-            
-            if (extrato.length === 0) {
-                extratoContainer.innerHTML = '<p>Nenhuma transação registrada</p>';
-                return;
+            try {
+                const extrato = gameBank.getExtrato();
+                
+                if (extrato.length === 0) {
+                    extratoContainer.innerHTML = '<p>Nenhuma transação registrada</p>';
+                    return;
+                }
+                
+                extrato.sort((a, b) => new Date(b.data) - new Date(a.data)).forEach(transacao => {
+                    const div = document.createElement('div');
+                    div.className = 'transacao';
+                    
+                    div.innerHTML = `
+                        <div class="transacao-info">
+                            <div class="transacao-descricao">${transacao.descricao}</div>
+                            <div class="transacao-data">${new Date(transacao.data).toLocaleString()}</div>
+                        </div>
+                        <div class="transacao-valor">
+                            <div class="${transacao.valor >= 0 ? 'valor-positivo' : 'valor-negativo'}">
+                                ${transacao.valor >= 0 ? '+' : ''}${transacao.valor.toLocaleString('pt-BR', {
+                                    style: 'currency',
+                                    currency: 'BRL'
+                                })}
+                            </div>
+                        </div>
+                    `;
+                    
+                    extratoContainer.appendChild(div);
+                });
+            } catch (e) {
+                console.error("Erro ao carregar extrato:", e);
+                extratoContainer.innerHTML = '<p class="valor-negativo">Erro ao carregar extrato</p>';
             }
-            
-            extrato.sort((a, b) => new Date(b.data) - new Date(a.data)).forEach(transacao => {
-                const div = document.createElement('div');
-                div.className = 'transacao';
-                div.innerHTML = `
-                    <div class="transacao-info">
-                        <div class="transacao-descricao">${transacao.descricao}</div>
-                        <div class="transacao-data">${new Date(transacao.data).toLocaleString()}</div>
-                    </div>
-                    <div class="transacao-valor">
-                        <div class="${transacao.valor >= 0 ? 'valor-positivo' : 'valor-negativo'}">
-                            ${transacao.valor >= 0 ? '+' : ''}${transacao.valor.toLocaleString('pt-BR', {
-                                style: 'currency',
-                                currency: 'BRL'
-                            })}
-                        </div>
-                        ${transacao.descricao.includes('Taxa') ? `
-                        <div class="valor-taxa">
-                            Taxa de serviço
-                        </div>
-                        ` : ''}
-                    </div>
-                `;
-                extratoContainer.appendChild(div);
-            });
         }
 
-        // Resgatar saldo diário
         function resgatarSaldo() {
-            if (gameBank.resgatarBonus()) {
-                alert('R$100 resgatados! Volte amanhã para mais.');
+            try {
+                if (gameBank.resgatarBonus()) {
+                    alert('R$100 resgatados! Volte amanhã para mais.');
+                    atualizarSaldoDisplay();
+                    carregarExtrato();
+                } else {
+                    alert('Você já resgatou hoje. Volte amanhã!');
+                }
+            } catch (e) {
+                console.error("Erro no resgate:", e);
+                alert('Erro ao processar resgate!');
+            }
+        }
+
+        // Inicialização segura
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                const username = window.localStorage.getItem('user') || 'Usuário';
+                document.getElementById('username').textContent = username;
+                
                 atualizarSaldoDisplay();
                 carregarExtrato();
-            } else {
-                alert('Você já resgatou hoje. Volte amanhã!');
+                
+                // Verificação periódica de integridade
+                setInterval(() => {
+                    gameBank.getSaldo();
+                }, 30000);
+            } catch (e) {
+                console.error("Erro na inicialização:", e);
             }
-        }
-
-        // Inicialização do sistema
-        document.addEventListener('DOMContentLoaded', function() {
-            const username = localStorage.getItem('user') || 'Usuário';
-            document.getElementById('username').textContent = username;
-            
-            // Verifica e corrige qualquer adulteração
-            gameBank.getSaldo();
-            
-            // Atualiza a exibição
-            atualizarSaldoDisplay();
-            carregarExtrato();
-            
-            // Proteção adicional contra manipulação
-            setInterval(() => {
-                gameBank.getSaldo(); // Verifica integridade periodicamente
-            }, 30000); // A cada 30 segundos
         });
 
-        // Proteção contra alteração do localStorage
-        const originalLocalStorage = window.localStorage;
-        Object.defineProperty(window, 'localStorage', {
-            get: function() {
-                return new Proxy(originalLocalStorage, {
-                    set: function(target, prop, value) {
-                        if (prop === 'saldoSeguro' || prop === 'extratoSeguro' || prop === 'hashSaldo') {
-                            console.warn('Tentativa de alteração bloqueada:', prop);
-                            return false;
+        // Proteção contra alteração direta do localStorage
+        (function() {
+            const ls = window.localStorage;
+            const protectedKeys = ['saldoSeguro', 'extratoSeguro', 'hashSaldo'];
+            
+            Object.defineProperty(window, 'localStorage', {
+                get: function() {
+                    return new Proxy(ls, {
+                        get: function(target, prop) {
+                            return target[prop];
+                        },
+                        set: function(target, prop, value) {
+                            if (protectedKeys.includes(prop.toString())) {
+                                console.warn(`Tentativa de alterar ${prop} bloqueada`);
+                                return false;
+                            }
+                            target[prop] = value;
+                            return true;
                         }
-                        target[prop] = value;
-                        return true;
-                    },
-                    get: function(target, prop) {
-                        return target[prop];
-                    }
-                });
-            }
-        });
+                    });
+                }
+            });
+        })();
     </script>
 </body>
 </html>
