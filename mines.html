@@ -384,7 +384,7 @@
             try {
                 // Calcular ganhos com precisão decimal
                 const ganhoBruto = parseFloat((valorAposta * multiplicadorAtual).toFixed(2));
-                const ganhoLiquido = parseFloat((ganhoBruto * 0.875).toFixed(2)); // 12.5% de taxa
+                const ganhoLiquido = parseFloat((ganhoBruto * 0.975).toFixed(2)); // 12.5% de taxa
 
                 saldo += ganhoLiquido;
                 updateSaldo();

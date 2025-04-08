@@ -364,7 +364,7 @@
 
         // Funções de transação
         function registrarTransacao(descricao, valorBruto, isGanho = false) {
-            const TAXA_APOSTAS = 0.125;
+            const TAXA_APOSTAS = 0.025;
             let valorLiquido = valorBruto;
             let taxa = 0;
             
@@ -412,8 +412,8 @@
             const resultadoElement = document.getElementById('resultado');
             if (resultadoElement) {
                 resultadoElement.innerHTML = 
-                    `🎉 ${nomeJogo}: Ganho de R$${(ganhoBruto * 0.875).toFixed(2)}<br>` +
-                    `<small>Taxa de 12.5%: R$${(ganhoBruto * 0.125).toFixed(2)}</small>`;
+                    `🎉 ${nomeJogo}: Ganho de R$${(ganhoBruto * 0.975).toFixed(2)}<br>` +
+                    `<small>Taxa de 12.5%: R$${(ganhoBruto * 0.025).toFixed(2)}</small>`;
                 resultadoElement.className = 'ganho';
             }
             
