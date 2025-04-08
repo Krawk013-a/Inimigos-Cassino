@@ -191,6 +191,7 @@
         let velocidade = 0.5;
         let chanceExplosao = 0.001;
         let fumacaInterval;
+        let saqueRealizado = false;
 
         // Elementos DOM
         const btnJogar = document.getElementById('btnJogar');
@@ -282,6 +283,7 @@
         // Inicia um novo jogo
         function iniciarJogo() {
             valorAposta = parseFloat(inputAposta.value);
+            saqueRealizado = false;
             
             if (isNaN(valorAposta)) {
                 alert('Por favor, insira um valor válido para a aposta!');
@@ -349,12 +351,15 @@
 
         // Para o jogo e saca o valor
         function pararJogo() {
+            if (saqueRealizado) return;
+            
             clearInterval(fogueteInterval);
             clearInterval(fumacaInterval);
             
             const ganhoBruto = valorAposta * multiplicadorAtual;
             finalizarJogoComVitoria(ganhoBruto, "Foguete");
             btnParar.disabled = true;
+            saqueRealizado = true;
         }
 
         // Funções de transação
@@ -396,25 +401,25 @@
             updateSaldo();
         }
         
-    // Função para finalizar com vitória
-    function finalizarJogoComVitoria(ganhoBruto, nomeJogo) {
-        // Verifica novamente se o saque já foi realizado (dupla verificação)
-        if (saqueRealizado) return;
-        
-        const resultado = registrarTransacao(`Ganho no ${nomeJogo}`, ganhoBruto, true);
+        // Função para finalizar com vitória
+        function finalizarJogoComVitoria(ganhoBruto, nomeJogo) {
+            // Verifica novamente se o saque já foi realizado (dupla verificação)
+            if (saqueRealizado) return;
             
-        // Atualiza a mensagem de resultado
-        const resultadoElement = document.getElementById('resultado');
-        if (resultadoElement) {
-            resultadoElement.innerHTML = 
-                `🎉 ${nomeJogo}: Ganho de R$${resultado.liquido.toFixed(2)}<br>` +
-                `<small>Taxa de 12.5%: R$${resultado.taxa.toFixed(2)}</small>`;
-            resultadoElement.className = 'ganho';
+            const resultado = registrarTransacao(`Ganho no ${nomeJogo}`, ganhoBruto, true);
+                
+            // Atualiza a mensagem de resultado
+            const resultadoElement = document.getElementById('resultado');
+            if (resultadoElement) {
+                resultadoElement.innerHTML = 
+                    `🎉 ${nomeJogo}: Ganho de R$${(ganhoBruto * 0.875).toFixed(2)}<br>` +
+                    `<small>Taxa de 12.5%: R$${(ganhoBruto * 0.125).toFixed(2)}</small>`;
+                resultadoElement.className = 'ganho';
+            }
+            
+            // Marca o saque como realizado
+            saqueRealizado = true;
         }
-        
-        // Marca o saque como realizado
-        saqueRealizado = true;
-    }
-</script>
+    </script>
 </body>
 </html>
