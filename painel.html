@@ -213,37 +213,163 @@
     </div>
 
     <script>
-        // Função para migrar dados da versão antiga para a nova
-        function migrarDados() {
-            // Migrar saldo se existir na versão antiga
-            const saldoAntigo = localStorage.getItem('cassino_saldo');
-            if (saldoAntigo && !localStorage.getItem('cassino_saldo_v2')) {
-                localStorage.setItem('cassino_saldo_v2', saldoAntigo);
-                localStorage.removeItem('cassino_saldo');
-            }
+        // Sistema Bancário Seguro
+        const CassinoBank = {
+            SECRET_KEY: 'TCC_CASSINO_SECURE_' + (localStorage.getItem('cassino_user') || 'default'),
             
-            // Migrar extrato se existir na versão antiga
-            const extratoAntigo = JSON.parse(localStorage.getItem('cassino_extrato'));
-            if (extratoAntigo && !localStorage.getItem('cassino_extrato_v2')) {
-                localStorage.setItem('cassino_extrato_v2', JSON.stringify(extratoAntigo));
-                localStorage.removeItem('cassino_extrato');
-            }
-        }
+            generateHash: function(data) {
+                let hash = 0;
+                const str = this.SECRET_KEY + JSON.stringify(data);
+                for (let i = 0; i < str.length; i++) {
+                    const char = str.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash;
+                }
+                return hash.toString(16);
+            },
 
-        // Verifica se o usuário está logado (se não, redireciona para login)
+            encryptData: function(data) {
+                let result = '';
+                const str = JSON.stringify(data);
+                for (let i = 0; i < str.length; i++) {
+                    const charCode = str.charCodeAt(i) ^ this.SECRET_KEY.charCodeAt(i % this.SECRET_KEY.length);
+                    result += String.fromCharCode(charCode);
+                }
+                return btoa(result);
+            },
+
+            decryptData: function(encrypted) {
+                try {
+                    const str = atob(encrypted);
+                    let result = '';
+                    for (let i = 0; i < str.length; i++) {
+                        const charCode = str.charCodeAt(i) ^ this.SECRET_KEY.charCodeAt(i % this.SECRET_KEY.length);
+                        result += String.fromCharCode(charCode);
+                    }
+                    return JSON.parse(result);
+                } catch (e) {
+                    console.error('Falha ao decriptar dados', e);
+                    return null;
+                }
+            },
+
+            getSaldo: function() {
+                const encrypted = localStorage.getItem('cassino_saldo_secure');
+                if (!encrypted) return 100.00;
+                
+                const data = this.decryptData(encrypted);
+                if (!data || !data.saldo || !data.hash) {
+                    console.error('Dados corrompidos - resetando saldo');
+                    this.setSaldo(100.00);
+                    return 100.00;
+                }
+                
+                const checkHash = this.generateHash({saldo: data.saldo});
+                if (checkHash !== data.hash) {
+                    console.error('Tentativa de adulteração detectada!');
+                    this.setSaldo(100.00);
+                    return 100.00;
+                }
+                
+                return parseFloat(data.saldo);
+            },
+            
+            setSaldo: function(valor) {
+                const saldo = parseFloat(valor).toFixed(2);
+                const hash = this.generateHash({saldo});
+                const data = this.encryptData({saldo, hash});
+                localStorage.setItem('cassino_saldo_secure', data);
+            },
+            
+            transacionar: function(descricao, valorBruto, isGanho = false) {
+                const TAXA = 0.125;
+                let valorLiquido = valorBruto;
+                let taxa = 0;
+                
+                if (isGanho && valorBruto > 0) {
+                    taxa = valorBruto * TAXA;
+                    valorLiquido = valorBruto - taxa;
+                    this.registrarTransacao(`Taxa sobre ${descricao.toLowerCase()}`, -taxa);
+                }
+                
+                const novoSaldo = this.getSaldo() + valorLiquido;
+                this.setSaldo(novoSaldo);
+                this.registrarTransacao(descricao, valorLiquido);
+                
+                return parseFloat(valorLiquido.toFixed(2));
+            },
+            
+            registrarTransacao: function(descricao, valor) {
+                const extrato = this.getExtrato();
+                extrato.unshift({
+                    data: new Date().toISOString(),
+                    descricao: descricao,
+                    valor: parseFloat(valor.toFixed(2)),
+                    saldo: this.getSaldo(),
+                    hash: this.generateHash({
+                        descricao,
+                        valor: parseFloat(valor.toFixed(2)),
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                
+                localStorage.setItem('cassino_extrato_secure', this.encryptData(extrato));
+            },
+            
+            getExtrato: function() {
+                const encrypted = localStorage.getItem('cassino_extrato_secure');
+                if (!encrypted) return [];
+                
+                const extrato = this.decryptData(encrypted) || [];
+                
+                // Verificar integridade de cada transação
+                return extrato.filter(transacao => {
+                    if (!transacao.hash) return false;
+                    const checkHash = this.generateHash({
+                        descricao: transacao.descricao,
+                        valor: transacao.valor,
+                        timestamp: transacao.data
+                    });
+                    return checkHash === transacao.hash;
+                });
+            },
+            
+            verificarIntegridade: function() {
+                const saldoAtual = this.getSaldo();
+                const extrato = this.getExtrato();
+                
+                if (extrato.length === 0) return true;
+                
+                // Recalcular saldo baseado no extrato
+                let saldoCalculado = 100.00;
+                for (const transacao of extrato.reverse()) {
+                    saldoCalculado += transacao.valor;
+                }
+                
+                // Verificar consistência
+                if (Math.abs(saldoCalculado - saldoAtual) > 0.01) {
+                    console.error('Inconsistência detectada!', saldoCalculado, saldoAtual);
+                    this.setSaldo(100.00);
+                    return false;
+                }
+                
+                return true;
+            }
+        };
+
+        // Verifica se o usuário está logado
         if (!localStorage.getItem('cassino_user')) {
             window.location.href = 'login.html';
         }
 
-        // Migra os dados para o novo formato
-        migrarDados();
+        // Verificar integridade dos dados
+        CassinoBank.verificarIntegridade();
 
         // Atualiza o nome do usuário
         document.getElementById('username').textContent = localStorage.getItem('cassino_user');
 
-        // Sistema de Saldo e Transações
-        const saldoAtual = parseFloat(localStorage.getItem('cassino_saldo_v2')) || 100;
-        document.getElementById('saldo-display').textContent = saldoAtual.toLocaleString('pt-BR', {
+        // Atualizar saldo na tela
+        document.getElementById('saldo-display').textContent = CassinoBank.getSaldo().toLocaleString('pt-BR', {
             style: 'currency',
             currency: 'BRL'
         });
@@ -254,29 +380,18 @@
             const ultimoResgate = localStorage.getItem('ultimo_resgate');
             
             if (ultimoResgate !== hoje) {
-                const novoSaldo = saldoAtual + 100;
-                localStorage.setItem('cassino_saldo_v2', novoSaldo.toString());
+                CassinoBank.transacionar("Bônus diário", 100);
                 localStorage.setItem('ultimo_resgate', hoje);
                 
-                // Registrar transação no extrato
-                const extrato = JSON.parse(localStorage.getItem('cassino_extrato_v2')) || [];
-                extrato.unshift({
-                    data: new Date().toISOString(),
-                    descricao: "Bônus diário",
-                    valor: 100,
-                    saldo: novoSaldo
-                });
-                localStorage.setItem('cassino_extrato_v2', JSON.stringify(extrato));
-                
                 alert('R$100 resgatados com sucesso!');
-                window.location.reload(); // Atualiza a página
+                window.location.reload();
             } else {
                 alert('Você já resgatou seu bônus hoje. Volte amanhã!');
             }
         });
 
         // Carrega o extrato
-        const extrato = JSON.parse(localStorage.getItem('cassino_extrato_v2')) || [];
+        const extrato = CassinoBank.getExtrato();
         const extratoContainer = document.getElementById('extrato');
         
         if (extrato.length === 0) {
@@ -286,7 +401,6 @@
                 const div = document.createElement('div');
                 div.className = 'transacao';
                 
-                // Verifica se há taxa (transações negativas após um ganho)
                 const taxaElement = transacao.descricao.toLowerCase().includes('taxa') 
                     ? `<div class="valor-taxa">Taxa: ${Math.abs(transacao.valor).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}</div>`
                     : '';
