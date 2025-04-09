@@ -213,12 +213,51 @@
 
     <footer>
         <p>Este site é um simulador educacional (TCC). Não utilize valores reais.</p>
-        <p id="commit-version">Versão: carregando...</p>
+        <p id="commit-version">Versão: tigrinho-1.0</p>
     </footer>
 
     <script>
+        // Sistema Bancário (compatível com o painel e mines)
+        const CassinoBank = {
+            getSaldo: function() {
+                return parseFloat(localStorage.getItem('cassino_saldo_v2')) || 100.00;
+            },
+            
+            setSaldo: function(valor) {
+                localStorage.setItem('cassino_saldo_v2', valor.toFixed(2));
+            },
+            
+            transacionar: function(descricao, valorBruto, isGanho = false) {
+                const TAXA = 0.125;
+                let valorLiquido = valorBruto;
+                let taxa = 0;
+                
+                if (isGanho && valorBruto > 0) {
+                    taxa = valorBruto * TAXA;
+                    valorLiquido = valorBruto - taxa;
+                    this.registrarTransacao(`Taxa sobre ${descricao.toLowerCase()}`, -taxa);
+                }
+                
+                const novoSaldo = this.getSaldo() + valorLiquido;
+                this.setSaldo(novoSaldo);
+                this.registrarTransacao(descricao, valorLiquido);
+                
+                return parseFloat(valorLiquido.toFixed(2));
+            },
+            
+            registrarTransacao: function(descricao, valor) {
+                const extrato = JSON.parse(localStorage.getItem('cassino_extrato_v2')) || [];
+                extrato.unshift({
+                    data: new Date().toISOString(),
+                    descricao: descricao,
+                    valor: parseFloat(valor.toFixed(2)),
+                    saldo: this.getSaldo()
+                });
+                localStorage.setItem('cassino_extrato_v2', JSON.stringify(extrato));
+            }
+        };
+
         // Variáveis globais
-        let saldo = parseFloat(localStorage.getItem('saldo')) || 100.00;
         let valorAposta = 0;
         let jogoAtivo = false;
         let autoPlayAtivo = false;
@@ -236,15 +275,16 @@
 
         // Inicialização do jogo
         document.addEventListener('DOMContentLoaded', function() {
+            // Verifica se está logado
+            if (!localStorage.getItem('cassino_user')) {
+                window.location.href = 'login.html';
+                return;
+            }
+
             updateSaldo();
-            carregarVersao();
             criarGrid();
             document.getElementById('valorAposta').addEventListener('change', validarAposta);
         });
-
-        function carregarVersao() {
-            document.getElementById('commit-version').textContent = 'Versão: tigrinho-1.0';
-        }
 
         function validarAposta() {
             const input = document.getElementById('valorAposta');
@@ -254,8 +294,7 @@
         }
 
         function updateSaldo() {
-            document.getElementById('saldo-value').textContent = saldo.toFixed(2);
-            localStorage.setItem('saldo', saldo);
+            document.getElementById('saldo-value').textContent = CassinoBank.getSaldo().toFixed(2);
         }
 
         function criarGrid() {
@@ -308,13 +347,15 @@
                 return;
             }
 
-            if (valorAposta > saldo) {
+            if (valorAposta > CassinoBank.getSaldo()) {
                 mostrarResultado('Saldo insuficiente para esta aposta!', 'error');
                 return;
             }
 
-            saldo -= valorAposta;
+            // Deduzir valor da aposta
+            CassinoBank.transacionar("Aposta no Tigrinho", -valorAposta);
             updateSaldo();
+            
             jogoAtivo = true;
             animacaoAtiva = true;
             
@@ -371,10 +412,18 @@
             document.getElementById('multiplicador').textContent = multiplicadorTotal + 'x';
             
             if (multiplicadorTotal > 0) {
-                const ganho = valorAposta * multiplicadorTotal;
-                saldo += ganho;
-                document.getElementById('ganho').textContent = ganho.toFixed(2);
-                mostrarResultado(`Você ganhou R$ ${ganho.toFixed(2)}! 🎉`, 'win');
+                const ganhoBruto = valorAposta * multiplicadorTotal;
+                const ganhoLiquido = CassinoBank.transacionar(
+                    `Ganho no Tigrinho (${multiplicadorTotal}x)`, 
+                    ganhoBruto, 
+                    true
+                );
+                
+                document.getElementById('ganho').textContent = ganhoLiquido.toFixed(2);
+                mostrarResultado(
+                    `Você ganhou R$ ${ganhoLiquido.toFixed(2)}! 🎉 (Taxa: R$${(ganhoBruto * 0.125).toFixed(2)})`, 
+                    'win'
+                );
                 soltarConfetes();
             } else {
                 document.getElementById('ganho').textContent = '0.00';
