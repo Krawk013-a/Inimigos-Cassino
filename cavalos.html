@@ -488,7 +488,7 @@
                 tempo++;
 
                 // A cada 20 ciclos (~1s), muda o modificador de velocidade
-                if (tempo % 20 === 0) {
+                if (tempo % 5 === 0) {
                     Object.keys(CAVALOS).forEach(num => {
                         const fator = 0.8 + Math.random() * 0.8;
                         modificadores[num] = fator;
