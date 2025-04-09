@@ -188,19 +188,77 @@
 
     <script>
         // =============================================
-        // SISTEMA BANCÁRIO (Compatível com o painel)
+        // SISTEMA BANCÁRIO SEGURO
         // =============================================
         const CassinoBank = {
+            SECRET_KEY: 'TCC_CASSINO_SECURE_' + (localStorage.getItem('cassino_user') || 'default'),
+            
+            generateHash: function(data) {
+                let hash = 0;
+                const str = this.SECRET_KEY + JSON.stringify(data);
+                for (let i = 0; i < str.length; i++) {
+                    const char = str.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash;
+                }
+                return hash.toString(16);
+            },
+
+            encryptData: function(data) {
+                let result = '';
+                const str = JSON.stringify(data);
+                for (let i = 0; i < str.length; i++) {
+                    const charCode = str.charCodeAt(i) ^ this.SECRET_KEY.charCodeAt(i % this.SECRET_KEY.length);
+                    result += String.fromCharCode(charCode);
+                }
+                return btoa(result);
+            },
+
+            decryptData: function(encrypted) {
+                try {
+                    const str = atob(encrypted);
+                    let result = '';
+                    for (let i = 0; i < str.length; i++) {
+                        const charCode = str.charCodeAt(i) ^ this.SECRET_KEY.charCodeAt(i % this.SECRET_KEY.length);
+                        result += String.fromCharCode(charCode);
+                    }
+                    return JSON.parse(result);
+                } catch (e) {
+                    console.error('Falha ao decriptar dados', e);
+                    return null;
+                }
+            },
+
             getSaldo: function() {
-                return parseFloat(localStorage.getItem('cassino_saldo_v2')) || 100.00;
+                const encrypted = localStorage.getItem('cassino_saldo_secure');
+                if (!encrypted) return 100.00;
+                
+                const data = this.decryptData(encrypted);
+                if (!data || !data.saldo || !data.hash) {
+                    console.error('Dados corrompidos - resetando saldo');
+                    this.setSaldo(100.00);
+                    return 100.00;
+                }
+                
+                const checkHash = this.generateHash({saldo: data.saldo});
+                if (checkHash !== data.hash) {
+                    console.error('Tentativa de adulteração detectada!');
+                    this.setSaldo(100.00);
+                    return 100.00;
+                }
+                
+                return parseFloat(data.saldo);
             },
             
             setSaldo: function(valor) {
-                localStorage.setItem('cassino_saldo_v2', valor.toFixed(2));
+                const saldo = parseFloat(valor).toFixed(2);
+                const hash = this.generateHash({saldo});
+                const data = this.encryptData({saldo, hash});
+                localStorage.setItem('cassino_saldo_secure', data);
             },
             
             transacionar: function(descricao, valorBruto, isGanho = false) {
-                const TAXA = 0.025;
+                const TAXA = 0.125;
                 let valorLiquido = valorBruto;
                 let taxa = 0;
                 
@@ -218,14 +276,57 @@
             },
             
             registrarTransacao: function(descricao, valor) {
-                const extrato = JSON.parse(localStorage.getItem('cassino_extrato_v2')) || [];
+                const extrato = this.getExtrato();
                 extrato.unshift({
                     data: new Date().toISOString(),
                     descricao: descricao,
                     valor: parseFloat(valor.toFixed(2)),
-                    saldo: this.getSaldo()
+                    saldo: this.getSaldo(),
+                    hash: this.generateHash({
+                        descricao,
+                        valor: parseFloat(valor.toFixed(2)),
+                        timestamp: new Date().toISOString()
+                    })
                 });
-                localStorage.setItem('cassino_extrato_v2', JSON.stringify(extrato));
+                
+                localStorage.setItem('cassino_extrato_secure', this.encryptData(extrato));
+            },
+            
+            getExtrato: function() {
+                const encrypted = localStorage.getItem('cassino_extrato_secure');
+                if (!encrypted) return [];
+                
+                const extrato = this.decryptData(encrypted) || [];
+                
+                return extrato.filter(transacao => {
+                    if (!transacao.hash) return false;
+                    const checkHash = this.generateHash({
+                        descricao: transacao.descricao,
+                        valor: transacao.valor,
+                        timestamp: transacao.data
+                    });
+                    return checkHash === transacao.hash;
+                });
+            },
+            
+            verificarIntegridade: function() {
+                const saldoAtual = this.getSaldo();
+                const extrato = this.getExtrato();
+                
+                if (extrato.length === 0) return true;
+                
+                let saldoCalculado = 100.00;
+                for (const transacao of extrato.reverse()) {
+                    saldoCalculado += transacao.valor;
+                }
+                
+                if (Math.abs(saldoCalculado - saldoAtual) > 0.01) {
+                    console.error('Inconsistência detectada!', saldoCalculado, saldoAtual);
+                    this.setSaldo(100.00);
+                    return false;
+                }
+                
+                return true;
             }
         };
 
@@ -252,6 +353,9 @@
                 return;
             }
 
+            // Verifica integridade dos dados
+            CassinoBank.verificarIntegridade();
+            
             updateSaldo();
             carregarVersao();
             
@@ -422,7 +526,7 @@
                 );
 
                 updateSaldo();
-                mostrarResultado(`Você ganhou R$ ${ganhoLiquido.toFixed(2)}! 🤑`, 'win');
+                mostrarResultado(`Você ganhou R$ ${ganhoLiquido.toFixed(2)}! 🤑 (Taxa: R$${(ganhoBruto * 0.125).toFixed(2)})`, 'win');
                 document.getElementById('pararBtn').disabled = true;
                 document.getElementById('jogarBtn').disabled = false;
                 mostrarBombas();
