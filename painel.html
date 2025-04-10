@@ -213,7 +213,7 @@
     </div>
 
     <script>
-        // Sistema Bancário Seguro
+        // Sistema Bancário Seguro Atualizado
         const CassinoBank = {
             SECRET_KEY: 'TCC_CASSINO_SECURE_' + (localStorage.getItem('cassino_user') || 'default'),
             
@@ -255,20 +255,20 @@
 
             getSaldo: function() {
                 const encrypted = localStorage.getItem('cassino_saldo_secure');
-                if (!encrypted) return 100.00;
+                if (!encrypted) return 0.00; // Saldo inicial ZERO
                 
                 const data = this.decryptData(encrypted);
                 if (!data || !data.saldo || !data.hash) {
                     console.error('Dados corrompidos - resetando saldo');
-                    this.setSaldo(100.00);
-                    return 100.00;
+                    this.setSaldo(0.00);
+                    return 0.00;
                 }
                 
                 const checkHash = this.generateHash({saldo: data.saldo});
                 if (checkHash !== data.hash) {
                     console.error('Tentativa de adulteração detectada!');
-                    this.setSaldo(100.00);
-                    return 100.00;
+                    this.setSaldo(0.00);
+                    return 0.00;
                 }
                 
                 return parseFloat(data.saldo);
@@ -279,10 +279,26 @@
                 const hash = this.generateHash({saldo});
                 const data = this.encryptData({saldo, hash});
                 localStorage.setItem('cassino_saldo_secure', data);
+                
+                // Backup do saldo
+                this.backupSaldo(saldo);
+            },
+            
+            backupSaldo: function(saldo) {
+                const backups = JSON.parse(localStorage.getItem('cassino_saldo_backups') || '[]');
+                backups.push({
+                    timestamp: new Date().toISOString(),
+                    saldo: saldo
+                });
+                
+                // Manter apenas os últimos 5 backups
+                if (backups.length > 5) backups.shift();
+                
+                localStorage.setItem('cassino_saldo_backups', JSON.stringify(backups));
             },
             
             transacionar: function(descricao, valorBruto, isGanho = false) {
-                const TAXA = 0.125;
+                const TAXA = 0.125; // 12.5% de taxa sobre ganhos
                 let valorLiquido = valorBruto;
                 let taxa = 0;
                 
@@ -292,7 +308,7 @@
                     this.registrarTransacao(`Taxa sobre ${descricao.toLowerCase()}`, -taxa);
                 }
                 
-                const novoSaldo = this.getSaldo() + valorLiquido;
+                const novoSaldo = parseFloat((this.getSaldo() + valorLiquido).toFixed(2));
                 this.setSaldo(novoSaldo);
                 this.registrarTransacao(descricao, valorLiquido);
                 
@@ -340,16 +356,28 @@
                 
                 if (extrato.length === 0) return true;
                 
-                // Recalcular saldo baseado no extrato
-                let saldoCalculado = 100.00;
-                for (const transacao of extrato.reverse()) {
-                    saldoCalculado += transacao.valor;
+                // Começa com saldo inicial 0
+                let saldoCalculado = 0.00;
+                
+                // Percorre o extrato na ordem cronológica inversa (do mais antigo para o mais recente)
+                for (let i = extrato.length - 1; i >= 0; i--) {
+                    saldoCalculado += parseFloat(extrato[i].valor);
+                    saldoCalculado = parseFloat(saldoCalculado.toFixed(2));
                 }
                 
-                // Verificar consistência
-                if (Math.abs(saldoCalculado - saldoAtual) > 0.01) {
-                    console.error('Inconsistência detectada!', saldoCalculado, saldoAtual);
-                    this.setSaldo(100.00);
+                // Compara com margem de erro pequena
+                if (Math.abs(saldoCalculado - saldoAtual) > 0.009) {
+                    console.error('Inconsistência detectada! Calculado:', saldoCalculado, 'Atual:', saldoAtual);
+                    
+                    // Tenta recuperar do backup
+                    const backups = JSON.parse(localStorage.getItem('cassino_saldo_backups') || '[]');
+                    if (backups.length > 0) {
+                        this.setSaldo(backups[0].saldo);
+                        return false;
+                    }
+                    
+                    // Se não tiver backup, reseta para 0
+                    this.setSaldo(0.00);
                     return false;
                 }
                 
@@ -362,7 +390,7 @@
             window.location.href = 'login.html';
         }
 
-        // Verificar integridade dos dados
+        // Verificar integridade dos dados ao carregar
         CassinoBank.verificarIntegridade();
 
         // Atualiza o nome do usuário
