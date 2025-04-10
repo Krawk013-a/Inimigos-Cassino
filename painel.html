@@ -288,13 +288,21 @@
             
             backupSaldo: function(saldo) {
                 const backups = JSON.parse(localStorage.getItem('cassino_saldo_backups') || '[]');
-                backups.push({
-                    timestamp: new Date().toISOString(),
-                    saldo: saldo
-                });
+                const hoje = new Date().toLocaleDateString();
+                const ultimoBackup = backups[backups.length - 1];
                 
-                if (backups.length > 5) backups.shift();
-                localStorage.setItem('cassino_saldo_backups', JSON.stringify(backups));
+                if (!ultimoBackup || 
+                    Math.abs(parseFloat(ultimoBackup.saldo) - parseFloat(saldo)) > 0.10 ||
+                    new Date(ultimoBackup.timestamp).toLocaleDateString() !== hoje) {
+                    
+                    backups.push({
+                        timestamp: new Date().toISOString(),
+                        saldo: saldo
+                    });
+                    
+                    if (backups.length > 5) backups.shift();
+                    localStorage.setItem('cassino_saldo_backups', JSON.stringify(backups));
+                }
             },
             
             getExtrato: function() {
@@ -303,7 +311,6 @@
                 
                 const extrato = this.decryptData(encrypted) || [];
                 
-                // Verificar integridade de cada transação
                 return extrato.filter(transacao => {
                     if (!transacao.hash) return false;
                     const checkHash = this.generateHash({
@@ -317,7 +324,7 @@
             
             transacionar: function(descricao, valorBruto, isGanho = false) {
                 const TAXA = 0.125;
-                let valorLiquido = valorBruto;
+                let valorLiquido = parseFloat(valorBruto.toFixed(2));
                 let taxa = 0;
                 
                 if (isGanho && valorBruto > 0) {
@@ -357,13 +364,13 @@
                 if (extrato.length === 0) return true;
                 
                 let saldoCalculado = 0.00;
+                const extratoOrdenado = [...extrato].reverse();
                 
-                for (let i = extrato.length - 1; i >= 0; i--) {
-                    saldoCalculado += parseFloat(extrato[i].valor);
-                    saldoCalculado = Math.round(saldoCalculado * 100) / 100;
+                for (let transacao of extratoOrdenado) {
+                    saldoCalculado = parseFloat((saldoCalculado + transacao.valor).toFixed(2));
                 }
                 
-                if (Math.abs(saldoCalculado - saldoAtual) > 0.02) {
+                if (Math.abs(saldoCalculado - saldoAtual) > 0.05) {
                     console.warn('Inconsistência detectada! Calculado:', saldoCalculado, 'Atual:', saldoAtual);
                     
                     const backups = JSON.parse(localStorage.getItem('cassino_saldo_backups') || '[]');
@@ -372,6 +379,13 @@
                     });
                     
                     if (backupValido) {
+                        const diferencaBackup = Math.abs(parseFloat(backupValido.saldo) - saldoCalculado);
+                        if (diferencaBackup > 0.05) {
+                            console.log('Backup não resolve inconsistência, ajustando saldo calculado');
+                            this.setSaldo(saldoCalculado);
+                            return false;
+                        }
+                        
                         console.log('Restaurando do backup:', backupValido.saldo);
                         this.setSaldo(backupValido.saldo);
                         return false;
