@@ -256,7 +256,7 @@
             getSaldo: function() {
                 const encrypted = localStorage.getItem('cassino_saldo_secure');
                 if (!encrypted) {
-                    this.setSaldo(0.00); // Saldo inicial ZERO
+                    this.setSaldo(0.00);
                     return 0.00;
                 }
                 
@@ -283,7 +283,6 @@
                 const data = this.encryptData({saldo, hash});
                 localStorage.setItem('cassino_saldo_secure', data);
                 
-                // Backup do saldo
                 this.backupSaldo(saldo);
             },
             
@@ -294,14 +293,30 @@
                     saldo: saldo
                 });
                 
-                // Manter apenas os últimos 5 backups
                 if (backups.length > 5) backups.shift();
-                
                 localStorage.setItem('cassino_saldo_backups', JSON.stringify(backups));
             },
             
+            getExtrato: function() {
+                const encrypted = localStorage.getItem('cassino_extrato_secure');
+                if (!encrypted) return [];
+                
+                const extrato = this.decryptData(encrypted) || [];
+                
+                // Verificar integridade de cada transação
+                return extrato.filter(transacao => {
+                    if (!transacao.hash) return false;
+                    const checkHash = this.generateHash({
+                        descricao: transacao.descricao,
+                        valor: transacao.valor,
+                        timestamp: transacao.data
+                    });
+                    return checkHash === transacao.hash;
+                });
+            },
+            
             transacionar: function(descricao, valorBruto, isGanho = false) {
-                const TAXA = 0.125; // 12.5% de taxa sobre ganhos
+                const TAXA = 0.125;
                 let valorLiquido = valorBruto;
                 let taxa = 0;
                 
@@ -319,9 +334,7 @@
             },
             
             registrarTransacao: function(descricao, valor) {
-                const encryptedExtrato = localStorage.getItem('cassino_extrato_secure');
-                let extrato = encryptedExtrato ? this.decryptData(encryptedExtrato) || [] : [];
-                
+                const extrato = this.getExtrato();
                 extrato.unshift({
                     data: new Date().toISOString(),
                     descricao: descricao,
@@ -343,25 +356,19 @@
                 
                 if (extrato.length === 0) return true;
                 
-                // Começa com saldo inicial 0
                 let saldoCalculado = 0.00;
                 
-                // Percorre o extrato na ordem cronológica inversa (do mais antigo para o mais recente)
                 for (let i = extrato.length - 1; i >= 0; i--) {
                     saldoCalculado += parseFloat(extrato[i].valor);
-                    // Arredonda para 2 casas decimais a cada operação
                     saldoCalculado = Math.round(saldoCalculado * 100) / 100;
                 }
                 
-                // Compara com margem de erro maior (0.02 para lidar com arredondamentos)
                 if (Math.abs(saldoCalculado - saldoAtual) > 0.02) {
                     console.warn('Inconsistência detectada! Calculado:', saldoCalculado, 'Atual:', saldoAtual);
                     
-                    // Tenta encontrar um backup válido
                     const backups = JSON.parse(localStorage.getItem('cassino_saldo_backups') || '[]');
                     const backupValido = backups.find(b => {
-                        const backupSaldo = parseFloat(b.saldo);
-                        return !isNaN(backupSaldo);
+                        return !isNaN(parseFloat(b.saldo));
                     });
                     
                     if (backupValido) {
