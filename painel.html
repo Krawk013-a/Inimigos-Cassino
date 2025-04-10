@@ -255,7 +255,10 @@
 
             getSaldo: function() {
                 const encrypted = localStorage.getItem('cassino_saldo_secure');
-                if (!encrypted) return 0.00; // Saldo inicial ZERO
+                if (!encrypted) {
+                    this.setSaldo(0.00); // Saldo inicial ZERO
+                    return 0.00;
+                }
                 
                 const data = this.decryptData(encrypted);
                 if (!data || !data.saldo || !data.hash) {
@@ -303,8 +306,8 @@
                 let taxa = 0;
                 
                 if (isGanho && valorBruto > 0) {
-                    taxa = valorBruto * TAXA;
-                    valorLiquido = valorBruto - taxa;
+                    taxa = parseFloat((valorBruto * TAXA).toFixed(2));
+                    valorLiquido = parseFloat((valorBruto - taxa).toFixed(2));
                     this.registrarTransacao(`Taxa sobre ${descricao.toLowerCase()}`, -taxa);
                 }
                 
@@ -316,7 +319,9 @@
             },
             
             registrarTransacao: function(descricao, valor) {
-                const extrato = this.getExtrato();
+                const encryptedExtrato = localStorage.getItem('cassino_extrato_secure');
+                let extrato = encryptedExtrato ? this.decryptData(encryptedExtrato) || [] : [];
+                
                 extrato.unshift({
                     data: new Date().toISOString(),
                     descricao: descricao,
@@ -332,24 +337,6 @@
                 localStorage.setItem('cassino_extrato_secure', this.encryptData(extrato));
             },
             
-            getExtrato: function() {
-                const encrypted = localStorage.getItem('cassino_extrato_secure');
-                if (!encrypted) return [];
-                
-                const extrato = this.decryptData(encrypted) || [];
-                
-                // Verificar integridade de cada transação
-                return extrato.filter(transacao => {
-                    if (!transacao.hash) return false;
-                    const checkHash = this.generateHash({
-                        descricao: transacao.descricao,
-                        valor: transacao.valor,
-                        timestamp: transacao.data
-                    });
-                    return checkHash === transacao.hash;
-                });
-            },
-            
             verificarIntegridade: function() {
                 const saldoAtual = this.getSaldo();
                 const extrato = this.getExtrato();
@@ -362,22 +349,29 @@
                 // Percorre o extrato na ordem cronológica inversa (do mais antigo para o mais recente)
                 for (let i = extrato.length - 1; i >= 0; i--) {
                     saldoCalculado += parseFloat(extrato[i].valor);
-                    saldoCalculado = parseFloat(saldoCalculado.toFixed(2));
+                    // Arredonda para 2 casas decimais a cada operação
+                    saldoCalculado = Math.round(saldoCalculado * 100) / 100;
                 }
                 
-                // Compara com margem de erro pequena
-                if (Math.abs(saldoCalculado - saldoAtual) > 0.009) {
-                    console.error('Inconsistência detectada! Calculado:', saldoCalculado, 'Atual:', saldoAtual);
+                // Compara com margem de erro maior (0.02 para lidar com arredondamentos)
+                if (Math.abs(saldoCalculado - saldoAtual) > 0.02) {
+                    console.warn('Inconsistência detectada! Calculado:', saldoCalculado, 'Atual:', saldoAtual);
                     
-                    // Tenta recuperar do backup
+                    // Tenta encontrar um backup válido
                     const backups = JSON.parse(localStorage.getItem('cassino_saldo_backups') || '[]');
-                    if (backups.length > 0) {
-                        this.setSaldo(backups[0].saldo);
+                    const backupValido = backups.find(b => {
+                        const backupSaldo = parseFloat(b.saldo);
+                        return !isNaN(backupSaldo);
+                    });
+                    
+                    if (backupValido) {
+                        console.log('Restaurando do backup:', backupValido.saldo);
+                        this.setSaldo(backupValido.saldo);
                         return false;
                     }
                     
-                    // Se não tiver backup, reseta para 0
-                    this.setSaldo(0.00);
+                    console.log('Nenhum backup válido encontrado, ajustando saldo calculado');
+                    this.setSaldo(saldoCalculado);
                     return false;
                 }
                 
