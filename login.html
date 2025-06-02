@@ -1,81 +1,11 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Cassino TCC</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #121212;
-            color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-        .login-box {
-            background: #1e1e1e;
-            padding: 20px;
-            border-radius: 10px;
-            width: 300px;
-            text-align: center;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-        }
-        input {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border: none;
-            border-radius: 5px;
-        }
-        button {
-            background: #ffcc00;
-            color: black;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-    </style>
+    <meta charset="utf-8"/>
+    <title>Meu Redirect</title>
+
+    <meta http-equiv="refresh" content="5; URL='https://krawk013-a.github.io/BetSim/login.html"/>
 </head>
 <body>
-    <div class="login-box">
-        <h1>Cassino TCC</h1>
-        <input type="text" id="username" placeholder="Usuário">
-        <input type="password" id="password" placeholder="Senha">
-        <button id="btnLogin">Entrar</button>
-        <p id="error" style="color: red;"></p>
-    </div>
-
-    <script>
-        // Verifica se já está logado (evita redirecionamento em loop)
-        if (localStorage.getItem('cassino_user')) {
-            window.location.href = 'painel.html';
-        }
-
-        // Função de login
-        document.getElementById('btnLogin').addEventListener('click', function() {
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value.trim();
-            
-            if (username && password) {
-                // Salva o usuário no localStorage
-                localStorage.setItem('cassino_user', username);
-                
-                // Define saldo inicial se não existir
-                if (!localStorage.getItem('cassino_saldo')) {
-                    localStorage.setItem('cassino_saldo', '100');
-                }
-                
-                // Redireciona para o painel
-                window.location.href = 'painel.html';
-            } else {
-                document.getElementById('error').textContent = 'Preencha todos os campos!';
-            }
-        });
-    </script>
 </body>
 </html>
